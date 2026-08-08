@@ -48,11 +48,11 @@ types in `src/lib/types.ts`.
 
 Based on the `urls.py` you shared:
 
-| `api.ts` function | Django route |
-|---|---|
-| `getProducts()` | `GET /api/products/` |
+| `api.ts` function    | Django route                |
+| -------------------- | --------------------------- |
+| `getProducts()`      | `GET /api/products/`        |
 | `getProductBySlug()` | `GET /api/products/{slug}/` |
-| `getCategories()` | `GET /api/categories/` |
+| `getCategories()`    | `GET /api/categories/`      |
 
 Suggested steps:
 

@@ -24,7 +24,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof ApiError) {
-      return NextResponse.json(error.body ?? { detail: "Could not start checkout." }, { status: error.status });
+      return NextResponse.json(error.body ?? { detail: "Could not start checkout." }, {
+        status: error.status,
+      });
     }
     return NextResponse.json({ detail: "Could not start checkout." }, { status: 500 });
   }

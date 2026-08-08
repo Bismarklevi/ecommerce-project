@@ -41,7 +41,7 @@ class AdminBannerUploadTests(TestCase):
         self.assertTrue(default_storage.exists(banner.image.name))
 
         api_response = self.client.get("/api/banners/")
-        payload = next(row for row in api_response.json() if row["title"] == "New Season")
+        payload = next(row for row in api_response.json()["results"] if row["title"] == "New Season")
         self.assertTrue(payload["image"].startswith("http"))
         self.assertIn("cms/banners/", payload["image"])
 
@@ -55,5 +55,5 @@ class AdminBannerUploadTests(TestCase):
             follow=True,
         )
         api_response = self.client.get("/api/banners/")
-        titles = [row["title"] for row in api_response.json()]
+        titles = [row["title"] for row in api_response.json()["results"]]
         self.assertNotIn("Hidden Banner", titles)

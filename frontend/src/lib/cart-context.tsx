@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { Cart } from "./types";
 
 interface CartContextValue {
@@ -16,7 +10,10 @@ interface CartContextValue {
   signedIn: boolean | undefined;
   count: number;
   refresh: () => Promise<void>;
-  addItem: (variantId: number, quantity?: number) => Promise<{ ok: true } | { ok: false; detail: string }>;
+  addItem: (
+    variantId: number,
+    quantity?: number,
+  ) => Promise<{ ok: true } | { ok: false; detail: string }>;
   updateQuantity: (itemId: number, quantity: number) => Promise<void>;
   removeItem: (itemId: number) => Promise<void>;
 }
@@ -51,27 +48,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     refresh();
   }, [refresh]);
 
-  const addItem = useCallback(
-    async (variantId: number, quantity = 1) => {
-      const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_variant_id: variantId, quantity }),
-      });
-      if (response.status === 401) {
-        setSignedIn(false);
-        return { ok: false as const, detail: "Sign in to add items to your bag." };
-      }
-      const data = await response.json();
-      if (!response.ok) {
-        return { ok: false as const, detail: data.detail || "Could not add to bag." };
-      }
-      setCart(data);
-      setSignedIn(true);
-      return { ok: true as const };
-    },
-    [],
-  );
+  const addItem = useCallback(async (variantId: number, quantity = 1) => {
+    const response = await fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_variant_id: variantId, quantity }),
+    });
+    if (response.status === 401) {
+      setSignedIn(false);
+      return { ok: false as const, detail: "Sign in to add items to your bag." };
+    }
+    const data = await response.json();
+    if (!response.ok) {
+      return { ok: false as const, detail: data.detail || "Could not add to bag." };
+    }
+    setCart(data);
+    setSignedIn(true);
+    return { ok: true as const };
+  }, []);
 
   const updateQuantity = useCallback(async (itemId: number, quantity: number) => {
     const response = await fetch(`/api/cart/items/${itemId}`, {
@@ -90,7 +84,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const count = cart?.item_count ?? 0;
 
   return (
-    <CartContext.Provider value={{ cart, loading, signedIn, count, refresh, addItem, updateQuantity, removeItem }}>
+    <CartContext.Provider
+      value={{ cart, loading, signedIn, count, refresh, addItem, updateQuantity, removeItem }}
+    >
       {children}
     </CartContext.Provider>
   );

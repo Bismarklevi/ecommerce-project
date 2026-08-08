@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { backendFetch } from "@/lib/backend";
+import { backendFetch, unwrapList } from "@/lib/backend";
 import { formatPrice } from "@/lib/currency";
 import { getAuthToken } from "@/lib/session";
 import type { Order } from "@/lib/types";
@@ -24,7 +24,9 @@ export default async function AccountPage() {
     redirect("/login?next=/account");
   }
 
-  const orders = await backendFetch<Order[]>("/api/orders/", { token }).catch(() => []);
+  const orders = await backendFetch<Order[] | { results: Order[] }>("/api/orders/", { token })
+    .then(unwrapList)
+    .catch(() => [] as Order[]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
@@ -47,7 +49,8 @@ export default async function AccountPage() {
                 <p className="text-lg font-extrabold uppercase">Order #{order.id}</p>
                 <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-muted">
                   {new Date(order.created_at).toLocaleDateString()} / {order.item_count} item
-                  {order.item_count === 1 ? "" : "s"} / {STATUS_LABELS[order.status] || order.status}
+                  {order.item_count === 1 ? "" : "s"} /{" "}
+                  {STATUS_LABELS[order.status] || order.status}
                 </p>
               </div>
               <span className="text-sm font-bold">{formatPrice(order.total_amount)}</span>

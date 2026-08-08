@@ -27,7 +27,10 @@ export default function SiteHeader() {
   }
 
   const accountAction = signedIn ? (
-    <button onClick={handleSignOut} className="focus-ring text-left transition-colors hover:text-wine">
+    <button
+      onClick={handleSignOut}
+      className="focus-ring text-left transition-colors hover:text-wine"
+    >
       Sign out
     </button>
   ) : (
@@ -40,7 +43,10 @@ export default function SiteHeader() {
     <header className="z-50 border-hairline bg-bone lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:border-r">
       <div className="flex h-16 items-center justify-between border-b border-hairline px-4 sm:px-6 lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:border-b-0 lg:px-8 lg:py-10">
         <div className="flex items-center justify-between lg:block">
-          <Link href="/" className="focus-ring inline-block text-3xl font-extrabold tracking-[0.08em] text-ink">
+          <Link
+            href="/"
+            className="focus-ring inline-block text-3xl font-extrabold tracking-[0.08em] text-ink"
+          >
             KAIRA
           </Link>
           <button
@@ -57,7 +63,11 @@ export default function SiteHeader() {
 
         <nav className="mt-14 hidden flex-col gap-6 text-sm font-bold uppercase tracking-[0.12em] lg:flex">
           {NAV_LINKS.map((link) => (
-            <Link key={link.label} href={link.href} className="focus-ring transition-colors hover:text-wine">
+            <Link
+              key={link.label}
+              href={link.href}
+              className="focus-ring transition-colors hover:text-wine"
+            >
               {link.label}
             </Link>
           ))}
@@ -68,7 +78,10 @@ export default function SiteHeader() {
             <span className="text-xs tracking-[0.14em] text-muted">Theme</span>
             <ThemeToggle />
           </div>
-          <Link href="/cart" className="focus-ring flex items-center justify-between transition-colors hover:text-wine">
+          <Link
+            href="/cart"
+            className="focus-ring flex items-center justify-between transition-colors hover:text-wine"
+          >
             <span>Cart</span>
             <span className="inline-flex h-7 min-w-7 items-center justify-center bg-sage px-2 text-xs text-on-accent">
               {count}
@@ -96,7 +109,9 @@ export default function SiteHeader() {
             ))}
           </nav>
           <div className="mt-5 flex items-center justify-between border-t border-hairline pt-5">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Theme</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+              Theme
+            </span>
             <ThemeToggle />
           </div>
           <div className="mt-5 flex items-center justify-between border-t border-hairline pt-5 text-sm font-semibold uppercase tracking-[0.1em]">

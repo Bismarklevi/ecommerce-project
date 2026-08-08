@@ -51,7 +51,7 @@ class AdminImageUploadTests(TestCase):
         self.assertTrue(default_storage.exists(category.image.name))
 
         api_response = self.client.get("/api/categories/")
-        payload = next(row for row in api_response.json() if row["slug"] == "outerwear")
+        payload = next(row for row in api_response.json()["results"] if row["slug"] == "outerwear")
         self.assertTrue(payload["image"].startswith("http"))
         self.assertIn("category_images/", payload["image"])
 

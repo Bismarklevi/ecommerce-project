@@ -67,7 +67,8 @@ export default function CartPage() {
 
       {remaining > 0 ? (
         <div className="mb-8 border border-hairline bg-bone-2 px-5 py-4 text-sm text-muted">
-          Add <span className="font-bold text-ink">{formatPrice(remaining)}</span> more for free shipping.
+          Add <span className="font-bold text-ink">{formatPrice(remaining)}</span> more for free
+          shipping.
         </div>
       ) : (
         <div className="mb-8 border border-sage bg-sage/20 px-5 py-4 text-sm text-muted">
@@ -105,7 +106,9 @@ export default function CartPage() {
                       Size {item.product_variant.size}
                     </p>
                   </div>
-                  <p className="whitespace-nowrap text-sm font-bold">{formatPrice(item.line_total)}</p>
+                  <p className="whitespace-nowrap text-sm font-bold">
+                    {formatPrice(item.line_total)}
+                  </p>
                 </div>
 
                 <div className="mt-auto flex items-center justify-between pt-5">

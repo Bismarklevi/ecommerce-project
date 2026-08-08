@@ -61,7 +61,9 @@ body {
   color: var(--ink);
   font-family: var(--font-plaza), Raleway, "Avenir Next", "Segoe UI", Arial, sans-serif;
   letter-spacing: 0;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {

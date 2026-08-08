@@ -1,6 +1,9 @@
 import type { NextRequest } from "next/server";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000").replace(
+  /\/$/,
+  "",
+);
 
 export function resolveBackendUrl(path: string): string {
   if (path.startsWith("http")) return path;
@@ -18,6 +21,14 @@ export function forwardedClientHeaders(request: NextRequest): Record<string, str
   const realIp = request.headers.get("x-real-ip");
   if (realIp) headers["X-Real-IP"] = realIp;
   return headers;
+}
+
+// DRF list endpoints return a {count, next, previous, results} envelope now
+// that pagination is enabled. Server-side callers use this to get back a plain
+// array regardless of whether a given endpoint is paginated (mirrors the
+// client-side unwrapList in lib/api.ts).
+export function unwrapList<T>(payload: T[] | { results: T[] }): T[] {
+  return Array.isArray(payload) ? payload : (payload?.results ?? []);
 }
 
 export class ApiError extends Error {

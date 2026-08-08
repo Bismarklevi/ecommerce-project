@@ -17,7 +17,11 @@ export default function CheckoutPage() {
   }, [signedIn, router]);
 
   if (loading || signedIn === undefined) {
-    return <div className="mx-auto max-w-3xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">Loading...</div>;
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">
+        Loading...
+      </div>
+    );
   }
 
   const items = cart?.items ?? [];
@@ -57,7 +61,11 @@ export default function CheckoutPage() {
       });
       const order = await orderResponse.json();
       if (!orderResponse.ok) {
-        setError(typeof order === "object" ? Object.values(order).flat().join(" ") : "Could not place order.");
+        setError(
+          typeof order === "object"
+            ? Object.values(order).flat().join(" ")
+            : "Could not place order.",
+        );
         setSubmitting(false);
         return;
       }
@@ -87,31 +95,45 @@ export default function CheckoutPage() {
       <div className="grid gap-10 lg:grid-cols-[1fr_22rem]">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
-            <label htmlFor="name" className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted">
+            <label
+              htmlFor="name"
+              className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+            >
               Full name
             </label>
             <input id="name" name="name" required className="field-input" />
           </div>
           <div>
-            <label htmlFor="email" className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted">
+            <label
+              htmlFor="email"
+              className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+            >
               Email
             </label>
             <input id="email" name="email" type="email" required className="field-input" />
           </div>
           <div>
-            <label htmlFor="phone" className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted">
+            <label
+              htmlFor="phone"
+              className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+            >
               Phone
             </label>
             <input id="phone" name="phone" required className="field-input" />
           </div>
           <div>
-            <label htmlFor="address" className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted">
+            <label
+              htmlFor="address"
+              className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+            >
               Delivery address
             </label>
             <textarea id="address" name="address" required rows={4} className="field-input" />
           </div>
 
-          {error && <p className="border border-wine bg-wine/10 px-4 py-3 text-sm text-wine">{error}</p>}
+          {error && (
+            <p className="border border-wine bg-wine/10 px-4 py-3 text-sm text-wine">{error}</p>
+          )}
 
           <button
             type="submit"
@@ -120,7 +142,9 @@ export default function CheckoutPage() {
           >
             {submitting ? "Redirecting to payment..." : "Continue to payment"}
           </button>
-          <p className="text-xs text-muted">You will be redirected to Paystack to complete payment securely.</p>
+          <p className="text-xs text-muted">
+            You will be redirected to Paystack to complete payment securely.
+          </p>
         </form>
 
         <aside>
@@ -132,7 +156,9 @@ export default function CheckoutPage() {
                   <span className="text-muted">
                     {item.product_name} <span className="text-muted">x {item.quantity}</span>
                   </span>
-                  <span className="whitespace-nowrap font-bold">{formatPrice(item.line_total)}</span>
+                  <span className="whitespace-nowrap font-bold">
+                    {formatPrice(item.line_total)}
+                  </span>
                 </li>
               ))}
             </ul>

@@ -24,10 +24,7 @@ export default function ShopClient() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    Promise.all([
-      getProducts({ category: activeCategory, sort: activeSort }),
-      getCategories(),
-    ])
+    Promise.all([getProducts({ category: activeCategory, sort: activeSort }), getCategories()])
       .then(([p, c]) => {
         if (cancelled) return;
         setProducts(p);
@@ -64,7 +61,8 @@ export default function ShopClient() {
           <p className="section-eyebrow mb-3">Full collection</p>
           <h1 className="section-title">Shop</h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-muted">
-            Discover the latest styles, timeless classics, and premium essentials in the Kaira catalog.
+            Discover the latest styles, timeless classics, and premium essentials in the Kaira
+            catalog.
           </p>
         </div>
       </section>
@@ -72,7 +70,9 @@ export default function ShopClient() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[15rem_1fr] lg:px-8">
         <aside className="lg:sticky lg:top-8 lg:self-start">
           <div className="border-b border-hairline pb-6 lg:border-b-0 lg:border-r lg:pr-8">
-            <p className="mb-5 text-xs font-bold uppercase tracking-[0.18em] text-ink">Categories</p>
+            <p className="mb-5 text-xs font-bold uppercase tracking-[0.18em] text-ink">
+              Categories
+            </p>
             <div className="flex flex-wrap gap-2 lg:flex-col lg:items-start">
               <button
                 type="button"
@@ -98,7 +98,10 @@ export default function ShopClient() {
             </div>
 
             <div className="mt-8">
-              <label htmlFor="sort" className="mb-3 block text-xs font-bold uppercase tracking-[0.18em] text-ink">
+              <label
+                htmlFor="sort"
+                className="mb-3 block text-xs font-bold uppercase tracking-[0.18em] text-ink"
+              >
                 Sort by
               </label>
               <select
@@ -119,18 +122,37 @@ export default function ShopClient() {
         <section>
           <div className="mb-8 flex items-center justify-between border-b border-hairline pb-5">
             <p className="text-sm text-muted">
-              {loading ? "Loading products" : `${products.length} product${products.length === 1 ? "" : "s"}`}
+              {loading
+                ? "Loading products"
+                : `${products.length} product${products.length === 1 ? "" : "s"}`}
             </p>
             <div className="hidden gap-5 text-sm font-bold uppercase tracking-[0.12em] md:flex">
-              <button onClick={() => setParam("sort", "new")} className="focus-ring hover:text-wine">New arrivals</button>
-              <button onClick={() => setParam("sort", "featured")} className="focus-ring hover:text-wine">Recommended</button>
-              <button onClick={() => setParam("sort", "price-desc")} className="focus-ring hover:text-wine">Best sellers</button>
+              <button
+                onClick={() => setParam("sort", "new")}
+                className="focus-ring hover:text-wine"
+              >
+                New arrivals
+              </button>
+              <button
+                onClick={() => setParam("sort", "featured")}
+                className="focus-ring hover:text-wine"
+              >
+                Recommended
+              </button>
+              <button
+                onClick={() => setParam("sort", "price-desc")}
+                className="focus-ring hover:text-wine"
+              >
+                Best sellers
+              </button>
             </div>
           </div>
 
           {error ? (
             <div className="border border-wine/40 bg-wine/5 py-16 text-center px-6">
-              <p className="text-xl font-extrabold uppercase text-wine">Couldn&apos;t load products</p>
+              <p className="text-xl font-extrabold uppercase text-wine">
+                Couldn&apos;t load products
+              </p>
               <p className="mt-3 text-sm text-muted">{error}</p>
             </div>
           ) : loading ? (

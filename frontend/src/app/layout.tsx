@@ -54,7 +54,9 @@ export default function RootLayout({
             Skip to content
           </a>
           <SiteHeader />
-          <main id="main" className="lg:pl-64">{children}</main>
+          <main id="main" className="lg:pl-64">
+            {children}
+          </main>
           <SiteFooter />
         </CartProvider>
       </body>

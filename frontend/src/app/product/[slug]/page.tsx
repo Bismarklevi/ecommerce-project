@@ -9,11 +9,7 @@ import AddToCartForm from "./AddToCartForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProductPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
@@ -26,9 +22,14 @@ export default async function ProductPage({
     <div>
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
         <nav className="text-right text-xs uppercase tracking-[0.12em] text-muted sm:text-left">
-          <Link href="/shop" className="focus-ring hover:text-wine">Shop</Link>
+          <Link href="/shop" className="focus-ring hover:text-wine">
+            Shop
+          </Link>
           <span className="mx-2">/</span>
-          <Link href={`/shop?category=${product.category.slug}`} className="focus-ring hover:text-wine">
+          <Link
+            href={`/shop?category=${product.category.slug}`}
+            className="focus-ring hover:text-wine"
+          >
             {product.category.name}
           </Link>
           <span className="mx-2">/</span>
@@ -64,7 +65,9 @@ export default async function ProductPage({
 
         <div className="md:pt-8">
           <p className="section-eyebrow mb-3">{product.category.name}</p>
-          <h1 className="text-4xl font-extrabold uppercase leading-tight sm:text-5xl">{product.name}</h1>
+          <h1 className="text-4xl font-extrabold uppercase leading-tight sm:text-5xl">
+            {product.name}
+          </h1>
 
           <div className="mt-6 flex items-baseline gap-3 text-xl font-bold">
             {onSale && (

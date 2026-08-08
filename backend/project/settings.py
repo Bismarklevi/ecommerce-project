@@ -206,6 +206,8 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "project.pagination.StandardResultsPagination",
+    "PAGE_SIZE": 100,
     # Deliberately no DEFAULT_THROTTLE_CLASSES: a global throttle would be keyed
     # on the proxy's IP (the Next.js frontend fetches the catalog server-side)
     # and so would rate-limit all shoppers as one. Throttling is applied per-view

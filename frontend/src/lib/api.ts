@@ -11,7 +11,10 @@ import { Category, Product, ProductVariant } from "./types";
 // reconciles the two. Components never see a raw backend shape.
 // ---------------------------------------------------------------------------
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000").replace(
+  /\/$/,
+  "",
+);
 
 function resolveUrl(path: string): string {
   if (path.startsWith("http")) return path;
@@ -198,7 +201,9 @@ export async function getRelatedProducts(product: Product, limit = 4): Promise<P
 }
 
 export async function getCategories(): Promise<Category[]> {
-  const payload = await fetchJSON<BackendCategory[] | { results: BackendCategory[] }>("/api/categories/");
+  const payload = await fetchJSON<BackendCategory[] | { results: BackendCategory[] }>(
+    "/api/categories/",
+  );
   return unwrapList(payload).map(mapCategory);
 }
 

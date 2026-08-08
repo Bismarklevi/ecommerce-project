@@ -15,7 +15,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(order);
   } catch (error) {
     if (error instanceof ApiError) {
-      return NextResponse.json(error.body ?? { detail: "Could not load order." }, { status: error.status });
+      return NextResponse.json(error.body ?? { detail: "Could not load order." }, {
+        status: error.status,
+      });
     }
     return NextResponse.json({ detail: "Could not load order." }, { status: 500 });
   }

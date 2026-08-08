@@ -39,7 +39,11 @@ export default function ProductCard({ product }: { product: Product }) {
         </h3>
         <div className="mt-3 flex items-center justify-center gap-2 text-sm font-bold text-wine">
           <span>{formatPrice(product.price)}</span>
-          {onSale && <span className="text-xs text-muted line-through">{formatPrice(product.compare_at_price!)}</span>}
+          {onSale && (
+            <span className="text-xs text-muted line-through">
+              {formatPrice(product.compare_at_price!)}
+            </span>
+          )}
         </div>
       </div>
     </Link>

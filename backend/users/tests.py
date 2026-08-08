@@ -92,7 +92,7 @@ class AddressTests(TestCase):
         self.assertEqual(second.status_code, 201, second.data)
 
         listing = self.client.get("/api/addresses/")
-        defaults = {row["label"]: row["is_default"] for row in listing.data}
+        defaults = {row["label"]: row["is_default"] for row in listing.data["results"]}
         self.assertEqual(defaults, {"Home": False, "Office": True})
 
     def test_user_cannot_read_another_users_address(self):

@@ -17,5 +17,7 @@ export async function getAuthToken(): Promise<string | undefined> {
 // terminates TLS, e.g. most PaaS deployments) the standard forwarded-proto
 // header it sets.
 export function isSecureRequest(request: NextRequest): boolean {
-  return request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
+  return (
+    request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https"
+  );
 }

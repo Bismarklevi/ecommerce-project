@@ -10,7 +10,10 @@ import { resolveBackendUrl } from "@/lib/backend";
 // different device. Routing through this same-origin proxy means the browser
 // always hits a host it can actually reach; the real Django fetch then
 // happens server-side, the same reliable way Server Components already do it.
-export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
   const { path } = await params;
   const search = request.nextUrl.search;
   const backendPath = `/${path.join("/")}/${search}`;
@@ -21,7 +24,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(data, { status: backendResponse.status });
   } catch (cause) {
     return NextResponse.json(
-      { detail: `Could not reach the backend: ${cause instanceof Error ? cause.message : String(cause)}` },
+      {
+        detail: `Could not reach the backend: ${cause instanceof Error ? cause.message : String(cause)}`,
+      },
       { status: 502 },
     );
   }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ApiError, backendFetch } from "@/lib/backend";
+import { ApiError, backendFetch, unwrapList } from "@/lib/backend";
 import { AUTH_COOKIE_NAME } from "@/lib/session";
 import type { Order } from "@/lib/types";
 
@@ -10,11 +10,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const orders = await backendFetch<Order[]>("/api/orders/", { token });
-    return NextResponse.json(orders);
+    const payload = await backendFetch<Order[] | { results: Order[] }>("/api/orders/", { token });
+    // Keep the client contract a bare array even though the API is now paginated.
+    return NextResponse.json(unwrapList(payload));
   } catch (error) {
     if (error instanceof ApiError) {
-      return NextResponse.json(error.body ?? { detail: "Could not load orders." }, { status: error.status });
+      return NextResponse.json(error.body ?? { detail: "Could not load orders." }, {
+        status: error.status,
+      });
     }
     return NextResponse.json({ detail: "Could not load orders." }, { status: 500 });
   }
@@ -33,7 +36,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     if (error instanceof ApiError) {
-      return NextResponse.json(error.body ?? { detail: "Could not place order." }, { status: error.status });
+      return NextResponse.json(error.body ?? { detail: "Could not place order." }, {
+        status: error.status,
+      });
     }
     return NextResponse.json({ detail: "Could not place order." }, { status: 500 });
   }

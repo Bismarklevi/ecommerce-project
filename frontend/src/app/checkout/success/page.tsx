@@ -19,7 +19,9 @@ function StatusBanner({ paymentStatus }: { paymentStatus: string }) {
     return (
       <div className="border border-wine bg-wine/10 p-6">
         <p className="mb-1 text-xl font-extrabold uppercase">Payment did not go through</p>
-        <p className="text-sm text-muted">No money left your account. You can try again from your bag.</p>
+        <p className="text-sm text-muted">
+          No money left your account. You can try again from your bag.
+        </p>
       </div>
     );
   }
@@ -66,7 +68,11 @@ function CheckoutSuccessContent() {
   }
 
   if (loading) {
-    return <div className="mx-auto max-w-2xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">Loading...</div>;
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">
+        Loading...
+      </div>
+    );
   }
 
   if (notFound || !order) {
@@ -92,7 +98,10 @@ function CheckoutSuccessContent() {
           {order.items.map((item) => (
             <li key={item.id} className="flex justify-between gap-3">
               <span className="text-muted">
-                {item.product_name} <span className="text-muted">({item.size}) x {item.quantity}</span>
+                {item.product_name}{" "}
+                <span className="text-muted">
+                  ({item.size}) x {item.quantity}
+                </span>
               </span>
               <span className="whitespace-nowrap font-bold">{formatPrice(item.line_total)}</span>
             </li>
@@ -113,7 +122,13 @@ function CheckoutSuccessContent() {
 
 export default function CheckoutSuccessPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-2xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-2xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">
+          Loading...
+        </div>
+      }
+    >
       <CheckoutSuccessContent />
     </Suspense>
   );

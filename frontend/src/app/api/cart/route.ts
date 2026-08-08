@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(cart);
   } catch (error) {
     if (error instanceof ApiError) {
-      return NextResponse.json(error.body ?? { detail: "Could not load cart." }, { status: error.status });
+      return NextResponse.json(error.body ?? { detail: "Could not load cart." }, {
+        status: error.status,
+      });
     }
     return NextResponse.json({ detail: "Could not load cart." }, { status: 500 });
   }
@@ -33,7 +35,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(cart);
   } catch (error) {
     if (error instanceof ApiError) {
-      return NextResponse.json(error.body ?? { detail: "Could not update cart." }, { status: error.status });
+      return NextResponse.json(error.body ?? { detail: "Could not update cart." }, {
+        status: error.status,
+      });
     }
     return NextResponse.json({ detail: "Could not update cart." }, { status: 500 });
   }

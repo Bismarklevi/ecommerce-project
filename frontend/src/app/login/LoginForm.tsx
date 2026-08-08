@@ -85,7 +85,10 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
-          <label htmlFor="username" className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted">
+          <label
+            htmlFor="username"
+            className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+          >
             Username
           </label>
           <input id="username" name="username" type="text" required className="field-input" />
@@ -93,7 +96,10 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
 
         {mode === "register" && (
           <div>
-            <label htmlFor="email" className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted">
+            <label
+              htmlFor="email"
+              className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+            >
               Email
             </label>
             <input id="email" name="email" type="email" required className="field-input" />
@@ -101,7 +107,10 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
         )}
 
         <div>
-          <label htmlFor="password" className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted">
+          <label
+            htmlFor="password"
+            className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+          >
             Password
           </label>
           <input id="password" name="password" type="password" required className="field-input" />
@@ -115,11 +124,19 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
             >
               Confirm password
             </label>
-            <input id="password_confirm" name="password_confirm" type="password" required className="field-input" />
+            <input
+              id="password_confirm"
+              name="password_confirm"
+              type="password"
+              required
+              className="field-input"
+            />
           </div>
         )}
 
-        {error && <p className="border border-wine bg-wine/10 px-4 py-3 text-sm text-wine">{error}</p>}
+        {error && (
+          <p className="border border-wine bg-wine/10 px-4 py-3 text-sm text-wine">{error}</p>
+        )}
 
         <button
           type="submit"
@@ -131,7 +148,10 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       </form>
 
       <p className="mt-6 text-sm text-muted">
-        <Link href="/shop" className="focus-ring font-bold uppercase tracking-[0.12em] underline underline-offset-4 hover:text-wine">
+        <Link
+          href="/shop"
+          className="focus-ring font-bold uppercase tracking-[0.12em] underline underline-offset-4 hover:text-wine"
+        >
           Continue browsing
         </Link>
       </p>

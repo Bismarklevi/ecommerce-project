@@ -38,7 +38,9 @@ const fallbackProducts: Product[] = [
     price: "240.00",
     compare_at_price: null,
     category: fallbackCategories[1],
-    images: [{ id: 2, image: "/images/chunky-cable-knit-cardigan.jpg", alt: "Chunky Cable Knit Cardigan" }],
+    images: [
+      { id: 2, image: "/images/chunky-cable-knit-cardigan.jpg", alt: "Chunky Cable Knit Cardigan" },
+    ],
     sizes: ["S", "M", "L"],
     variants: [],
     fabric: "",
@@ -53,8 +55,15 @@ const fallbackProducts: Product[] = [
     description: "Clean tailoring for a sharper daily uniform.",
     price: "360.00",
     compare_at_price: null,
-    category: { id: 3, slug: "tailoring", name: "Tailoring", image: "/images/oversized-tailored-blazer.jpg" },
-    images: [{ id: 3, image: "/images/oversized-tailored-blazer.jpg", alt: "Oversized Tailored Blazer" }],
+    category: {
+      id: 3,
+      slug: "tailoring",
+      name: "Tailoring",
+      image: "/images/oversized-tailored-blazer.jpg",
+    },
+    images: [
+      { id: 3, image: "/images/oversized-tailored-blazer.jpg", alt: "Oversized Tailored Blazer" },
+    ],
     sizes: ["S", "M", "L"],
     variants: [],
     fabric: "",
@@ -69,8 +78,15 @@ const fallbackProducts: Product[] = [
     description: "A straight-leg staple cut for repeat wear.",
     price: "220.00",
     compare_at_price: null,
-    category: { id: 4, slug: "denim", name: "Denim", image: "/images/high-rise-straight-jeans.jpg" },
-    images: [{ id: 4, image: "/images/high-rise-straight-jeans.jpg", alt: "High Rise Straight Jeans" }],
+    category: {
+      id: 4,
+      slug: "denim",
+      name: "Denim",
+      image: "/images/high-rise-straight-jeans.jpg",
+    },
+    images: [
+      { id: 4, image: "/images/high-rise-straight-jeans.jpg", alt: "High Rise Straight Jeans" },
+    ],
     sizes: ["26", "28", "30"],
     variants: [],
     fabric: "",
@@ -178,7 +194,9 @@ export default async function Home() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
               <div className="absolute bottom-8 left-8 right-8 text-bone">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-bone/75">See more</p>
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-bone/75">
+                  See more
+                </p>
                 <h3 className="text-4xl font-extrabold uppercase leading-none">{category.name}</h3>
               </div>
             </Link>
@@ -191,9 +209,15 @@ export default async function Home() {
           <div>
             <h2 className="section-title">New arrivals</h2>
             <div className="mt-5 flex flex-wrap gap-5 text-sm font-bold uppercase tracking-[0.12em]">
-              <Link href="/shop?sort=new" className="focus-ring text-wine">New arrivals</Link>
-              <Link href="/shop?sort=featured" className="focus-ring hover:text-wine">Recommended</Link>
-              <Link href="/shop?sort=price-desc" className="focus-ring hover:text-wine">Best sellers</Link>
+              <Link href="/shop?sort=new" className="focus-ring text-wine">
+                New arrivals
+              </Link>
+              <Link href="/shop?sort=featured" className="focus-ring hover:text-wine">
+                Recommended
+              </Link>
+              <Link href="/shop?sort=price-desc" className="focus-ring hover:text-wine">
+                Best sellers
+              </Link>
             </div>
           </div>
           <Link href="/shop" className="site-btn-outline focus-ring">
@@ -217,15 +241,29 @@ export default async function Home() {
       <section className="bg-bone-2 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-3">
           {[
-            ["10 tips to dress like a queen", "Dresses, tailoring, and small details that keep the edit polished."],
-            ["Fashion outlet products", "A closer look at the pieces customers return to each season."],
-            ["The little black dress just for you", "Simple lines, exact fits, and outfits that work after sunset."],
+            [
+              "10 tips to dress like a queen",
+              "Dresses, tailoring, and small details that keep the edit polished.",
+            ],
+            [
+              "Fashion outlet products",
+              "A closer look at the pieces customers return to each season.",
+            ],
+            [
+              "The little black dress just for you",
+              "Simple lines, exact fits, and outfits that work after sunset.",
+            ],
           ].map(([title, body]) => (
             <article key={title} className="border-t border-ink/20 pt-6">
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-wine">From the blog</p>
+              <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-wine">
+                From the blog
+              </p>
               <h3 className="text-xl font-extrabold uppercase leading-tight">{title}</h3>
               <p className="mt-4 text-sm leading-6 text-muted">{body}</p>
-              <Link href="/shop" className="focus-ring mt-6 inline-block text-xs font-bold uppercase tracking-[0.16em] hover:text-wine">
+              <Link
+                href="/shop"
+                className="focus-ring mt-6 inline-block text-xs font-bold uppercase tracking-[0.16em] hover:text-wine"
+              >
                 Read more
               </Link>
             </article>
@@ -243,7 +281,12 @@ export default async function Home() {
             <label className="sr-only" htmlFor="newsletter-email">
               Email address
             </label>
-            <input id="newsletter-email" type="email" placeholder="Enter your email address" className="field-input" />
+            <input
+              id="newsletter-email"
+              type="email"
+              placeholder="Enter your email address"
+              className="field-input"
+            />
             <button type="submit" className="site-btn focus-ring">
               Subscribe
             </button>

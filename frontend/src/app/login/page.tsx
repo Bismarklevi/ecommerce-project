@@ -13,7 +13,8 @@ export default async function LoginPage({
         <p className="section-eyebrow mb-3">Account</p>
         <h1 className="section-title">Sign in</h1>
         <p className="mt-5 text-sm leading-7 text-muted">
-          Sign in to keep your bag, checkout details, and order history connected to your Kaira account.
+          Sign in to keep your bag, checkout details, and order history connected to your Kaira
+          account.
         </p>
       </section>
       <section className="border border-hairline p-6 sm:p-8">
