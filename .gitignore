@@ -1,0 +1,37 @@
+# ─────────────────────────── Backend (Django) ───────────────────────────
+/backend/.venv/
+/backend/venv/
+/backend/.env
+/backend/**/__pycache__/
+/backend/**/*.py[cod]
+*.sqlite3
+db.sqlite3
+
+# Collected static + user-uploaded/generated media (STATIC_ROOT / MEDIA_ROOT
+# resolve to backend/staticfiles and backend/media per settings.py). Source
+# assets used to seed the catalog live in backend/app/seed_assets and stay
+# tracked; runtime-generated media does not.
+/backend/staticfiles/
+/backend/media/
+
+# ─────────────────────────── Frontend (Next.js) ─────────────────────────
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/dist/
+/frontend/.cache/
+/frontend/.env
+/frontend/.env*.local
+/frontend/*.tsbuildinfo
+/frontend/next-env.d.ts
+
+# ─────────────────────────────── General ────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.idea/
+.vscode/
+*.swp

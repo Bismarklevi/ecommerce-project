@@ -1,0 +1,317 @@
+{% extends "admin/base.html" %}
+{% load i18n kaira_dashboard %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Kaira Admin') }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 pb-6">
+
+    <div>
+        <h1 class="text-2xl font-semibold text-base-900 dark:text-base-100">
+            {{ kaira_greeting }}{% if kaira_admin_name %}, {{ kaira_admin_name }}{% endif %} 👋
+        </h1>
+        <p class="mt-1 text-base-500 dark:text-base-400">
+            Here&rsquo;s what&rsquo;s happening with your store today &middot; {{ kaira_today|date:"F j, Y" }}
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <p class="text-xs font-medium uppercase tracking-wide text-base-500 dark:text-base-400">Today&rsquo;s sales</p>
+            <p class="mt-2 text-2xl font-semibold text-base-900 dark:text-base-100">{{ kaira_primary_kpis.revenue_today|ghs }}</p>
+            <p class="mt-1 text-xs {% if kaira_primary_kpis.revenue_change is None %}text-base-400{% elif kaira_primary_kpis.revenue_change >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                {{ kaira_primary_kpis.revenue_change|pct_change }} vs yesterday
+            </p>
+        </div>
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <p class="text-xs font-medium uppercase tracking-wide text-base-500 dark:text-base-400">Orders</p>
+            <p class="mt-2 text-2xl font-semibold text-base-900 dark:text-base-100">{{ kaira_primary_kpis.orders_today }}</p>
+            <p class="mt-1 text-xs {% if kaira_primary_kpis.orders_change is None %}text-base-400{% elif kaira_primary_kpis.orders_change >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                {{ kaira_primary_kpis.orders_change|pct_change }} vs yesterday
+            </p>
+        </div>
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <p class="text-xs font-medium uppercase tracking-wide text-base-500 dark:text-base-400">Average order</p>
+            <p class="mt-2 text-2xl font-semibold text-base-900 dark:text-base-100">{{ kaira_primary_kpis.average_order_value|ghs }}</p>
+            <p class="mt-1 text-xs text-base-400">Today&rsquo;s revenue &divide; today&rsquo;s orders</p>
+        </div>
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <p class="text-xs font-medium uppercase tracking-wide text-base-500 dark:text-base-400">New customers</p>
+            <p class="mt-2 text-2xl font-semibold text-base-900 dark:text-base-100">{{ kaira_primary_kpis.new_customers_today }}</p>
+            <p class="mt-1 text-xs {% if kaira_primary_kpis.new_customers_change is None %}text-base-400{% elif kaira_primary_kpis.new_customers_change >= 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                {{ kaira_primary_kpis.new_customers_change|pct_change }} vs yesterday
+            </p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {% for metric in kaira_operational_kpis %}
+        <a {% if metric.url %}href="{{ metric.url }}"{% endif %} class="rounded-default border border-base-200 bg-white p-4 shadow-xs dark:border-base-800 dark:bg-base-900 {% if metric.url %}hover:border-base-300 dark:hover:border-base-700 transition-colors{% endif %}">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-medium uppercase tracking-wide text-base-500 dark:text-base-400">{{ metric.title }}</p>
+                <span class="h-2 w-2 rounded-full {% if metric.tone == 'red' %}bg-red-500{% elif metric.tone == 'amber' %}bg-orange-500{% else %}bg-green-500{% endif %}"></span>
+            </div>
+            <p class="mt-1 text-xl font-semibold text-base-900 dark:text-base-100">{{ metric.value }}</p>
+            <p class="mt-1 text-xs text-base-400">{{ metric.footnote }}</p>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 class="font-semibold text-base-900 dark:text-base-100">Sales overview</h2>
+            <div class="flex gap-1 rounded-default bg-base-100 p-1 dark:bg-base-800">
+                {% for p in kaira_chart_periods %}
+                <a href="{{ p.url }}" class="rounded-default px-3 py-1 text-xs font-medium {% if kaira_chart.period == p.value %}bg-white text-base-900 shadow-xs dark:bg-base-700 dark:text-base-100{% else %}text-base-500 hover:text-base-700 dark:text-base-400{% endif %}">
+                    {{ p.label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% if kaira_chart.labels %}
+            <div class="relative w-full" style="height: 300px;">
+                <canvas class="chart" data-type="line" data-value='{{ kaira_chart_json }}'></canvas>
+            </div>
+        {% else %}
+            <div class="py-16 text-center">
+                <p class="font-medium text-base-700 dark:text-base-300">No sales yet</p>
+                <p class="mt-1 text-sm text-base-400">Sales data will appear here once your store receives orders.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <h2 class="font-semibold text-base-900 dark:text-base-100 mb-4">Needs your attention</h2>
+            {% if kaira_attention_items %}
+                <ul class="flex flex-col divide-y divide-base-100 dark:divide-base-800">
+                    {% for item in kaira_attention_items %}
+                    <li class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                        <div class="flex items-start gap-2">
+                            <span>{{ item.icon }}</span>
+                            <div>
+                                <p class="text-sm text-base-900 dark:text-base-100">{{ item.text }}</p>
+                                <p class="text-xs text-base-400">{{ item.footnote }}</p>
+                            </div>
+                        </div>
+                        {% if item.url %}
+                        <a href="{{ item.url }}" class="shrink-0 rounded-default border border-base-200 px-3 py-1.5 text-xs font-medium text-base-700 hover:border-base-300 dark:border-base-700 dark:text-base-300 dark:hover:border-base-600">
+                            {{ item.label }}
+                        </a>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="py-10 text-center">
+                    <p class="font-medium text-base-700 dark:text-base-300">All caught up</p>
+                    <p class="mt-1 text-sm text-base-400">Nothing needs your attention right now.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold text-base-900 dark:text-base-100">Top selling products</h2>
+                <a href="{% url 'admin:products_product_changelist' %}" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">View all products</a>
+            </div>
+            {% if kaira_top_products %}
+                <ul class="flex flex-col divide-y divide-base-100 dark:divide-base-800">
+                    {% for row in kaira_top_products %}
+                    <li class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                        {% with image=row.product.primary_image %}
+                        <div class="h-12 w-12 shrink-0 overflow-hidden rounded-default bg-base-100 dark:bg-base-800">
+                            {% if image and image.image %}
+                                <img src="{{ image.image.url }}" class="h-full w-full object-cover" alt="{{ row.product.name }}">
+                            {% endif %}
+                        </div>
+                        {% endwith %}
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium text-base-900 dark:text-base-100">{{ row.product.name }}</p>
+                            <p class="text-xs text-base-400">{{ row.product.category.name }} &middot; {{ row.units_sold }} sold &middot; {{ row.revenue|ghs }}</p>
+                        </div>
+                        <span class="shrink-0 rounded-default px-2 py-1 text-[11px] font-semibold uppercase
+                            {% if row.status == 'Out of stock' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400
+                            {% elif row.status == 'Low stock' %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400
+                            {% else %}bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400{% endif %}">
+                            {{ row.current_stock }} left
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="py-10 text-center">
+                    <p class="font-medium text-base-700 dark:text-base-300">No sales yet</p>
+                    <p class="mt-1 text-sm text-base-400">Best sellers will show up here once orders come in.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <h2 class="font-semibold text-base-900 dark:text-base-100 mb-4">Inventory health</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div>
+                    <p class="text-xl font-semibold text-base-900 dark:text-base-100">{{ kaira_inventory.total_products }}</p>
+                    <p class="text-xs text-base-400">Products</p>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold text-base-900 dark:text-base-100">{{ kaira_inventory.total_variants }}</p>
+                    <p class="text-xs text-base-400">Variants</p>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold text-green-600 dark:text-green-400">{{ kaira_inventory.in_stock }}</p>
+                    <p class="text-xs text-base-400">In stock</p>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold text-orange-600 dark:text-orange-400">{{ kaira_inventory.low_stock }}</p>
+                    <p class="text-xs text-base-400">Low stock</p>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold text-red-600 dark:text-red-400">{{ kaira_inventory.out_of_stock }}</p>
+                    <p class="text-xs text-base-400">Out of stock</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <h2 class="font-semibold text-base-900 dark:text-base-100 mb-4">Customer overview</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xl font-semibold text-base-900 dark:text-base-100">{{ kaira_customers.total_customers }}</p>
+                    <p class="text-xs text-base-400">Total customers</p>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold text-base-900 dark:text-base-100">{{ kaira_customers.new_customers }}</p>
+                    <p class="text-xs text-base-400">New (30 days)</p>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold text-base-900 dark:text-base-100">{{ kaira_customers.returning_customers }}</p>
+                    <p class="text-xs text-base-400">Returning</p>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold text-base-900 dark:text-base-100">{{ kaira_customers.repeat_purchase_rate }}%</p>
+                    <p class="text-xs text-base-400">Repeat purchase rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-base-900 dark:text-base-100">Low stock products</h2>
+            <a href="{% url 'admin:products_productvariant_changelist' %}" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">View inventory</a>
+        </div>
+        {% if kaira_low_stock_rows %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-base-200 text-left text-xs uppercase tracking-wide text-base-500 dark:border-base-800 dark:text-base-400">
+                        <th class="py-2 pr-4 font-medium">Product</th>
+                        <th class="py-2 pr-4 font-medium">Variant</th>
+                        <th class="py-2 pr-4 font-medium">SKU</th>
+                        <th class="py-2 pr-4 font-medium">Stock</th>
+                        <th class="py-2 pr-4 font-medium">Threshold</th>
+                        <th class="py-2 font-medium">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-base-100 dark:divide-base-800">
+                    {% for v in kaira_low_stock_rows %}
+                    <tr>
+                        <td class="py-2 pr-4 text-base-900 dark:text-base-100">{{ v.product.name }}</td>
+                        <td class="py-2 pr-4 text-base-500 dark:text-base-400">{{ v.size }} / {{ v.color }}</td>
+                        <td class="py-2 pr-4 font-mono text-xs text-base-500 dark:text-base-400">{{ v.sku }}</td>
+                        <td class="py-2 pr-4 text-base-900 dark:text-base-100">{{ v.stock_quantity }}</td>
+                        <td class="py-2 pr-4 text-base-500 dark:text-base-400">{{ kaira_low_stock_threshold }}</td>
+                        <td class="py-2">
+                            <span class="rounded-default bg-orange-100 px-2 py-1 text-[11px] font-semibold uppercase text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">Low stock</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="py-10 text-center">
+                <p class="font-medium text-base-700 dark:text-base-300">Inventory looks healthy</p>
+                <p class="mt-1 text-sm text-base-400">No products require restocking right now.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-base-900 dark:text-base-100">Recent orders</h2>
+            <a href="{% url 'admin:app_order_changelist' %}" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">View all orders</a>
+        </div>
+        {% if kaira_recent_orders %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-base-200 text-left text-xs uppercase tracking-wide text-base-500 dark:border-base-800 dark:text-base-400">
+                        <th class="py-2 pr-4 font-medium">Order</th>
+                        <th class="py-2 pr-4 font-medium">Customer</th>
+                        <th class="py-2 pr-4 font-medium">Date</th>
+                        <th class="py-2 pr-4 font-medium">Amount</th>
+                        <th class="py-2 pr-4 font-medium">Payment</th>
+                        <th class="py-2 font-medium">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-base-100 dark:divide-base-800">
+                    {% for order in kaira_recent_orders %}
+                    <tr>
+                        <td class="py-2 pr-4">
+                            <a href="{% url 'admin:app_order_change' order.pk %}" class="font-medium text-primary-600 hover:underline dark:text-primary-400">#{{ order.id }}</a>
+                        </td>
+                        <td class="py-2 pr-4 text-base-900 dark:text-base-100">{{ order.shipping_name|default:order.user.get_full_name|default:order.user.username }}</td>
+                        <td class="py-2 pr-4 text-base-500 dark:text-base-400">{{ order.created_at|date:"M j" }}</td>
+                        <td class="py-2 pr-4 text-base-900 dark:text-base-100">{{ order.total_amount|ghs }}</td>
+                        <td class="py-2 pr-4">
+                            <span class="rounded-default px-2 py-1 text-[11px] font-semibold uppercase
+                                {% if order.payment_status == 'paid' %}bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400
+                                {% elif order.payment_status == 'failed' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400
+                                {% elif order.payment_status == 'refunded' %}bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400
+                                {% else %}bg-base-100 text-base-600 dark:bg-base-800 dark:text-base-300{% endif %}">
+                                {{ order.get_payment_status_display }}
+                            </span>
+                        </td>
+                        <td class="py-2">
+                            <span class="rounded-default px-2 py-1 text-[11px] font-semibold uppercase
+                                {% if order.status == 'delivered' or order.status == 'completed' %}bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400
+                                {% elif order.status == 'cancelled' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400
+                                {% elif order.status == 'returned' %}bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400
+                                {% else %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="py-10 text-center">
+                <p class="font-medium text-base-700 dark:text-base-300">No orders yet</p>
+                <p class="mt-1 text-sm text-base-400">New orders will appear here.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+        <h2 class="font-semibold text-base-900 dark:text-base-100 mb-4">Quick actions</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {% for action in kaira_quick_actions %}
+            <a href="{{ action.url }}" class="rounded-default border border-base-200 px-3 py-3 text-center text-sm font-medium text-base-700 hover:border-primary-400 hover:text-primary-600 dark:border-base-700 dark:text-base-300 dark:hover:border-primary-500 dark:hover:text-primary-400">
+                {{ action.label }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

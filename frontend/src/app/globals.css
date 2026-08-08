@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #414141;
+  --bone: #ffffff;
+  --bone-2: #f2f4f9;
+  /* Darkened from the original #b09d81 -- that value was 2.63:1 contrast on
+     white (used for prices via text-wine), well under WCAG AA's 4.5:1 for
+     normal text. This passes at 5.61:1, computed, not guessed. */
+  --wine: #7a6448;
+  --wine-dark: #5f4d37;
+  --sage: #fbb710;
+  --hairline: #ebebeb;
+  --muted: #6b6b6b;
+  /* Mode-invariant: text sitting on a sage badge (ProductCard's New/Sale
+     tag, the header's cart count) needs to stay legible regardless of
+     theme -- if it used the flipping `ink` token, dark mode would put
+     near-white text on bright gold at 1.5:1 contrast. Same value in both
+     :root and .dark below, deliberately never overridden. */
+  --on-accent: #2a2318;
+  color-scheme: light;
+}
+
+.dark {
+  --ink: #f1ede4;
+  --bone: #17140f;
+  --bone-2: #211d16;
+  --wine: #d8bd96;
+  --wine-dark: #c2a276;
+  --sage: #fbb710;
+  --hairline: #332d22;
+  --muted: #a39c8e;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-bone: var(--bone);
+  --color-bone-2: var(--bone-2);
+  --color-wine: var(--wine);
+  --color-wine-dark: var(--wine-dark);
+  --color-sage: var(--sage);
+  --color-hairline: var(--hairline);
+  --color-muted: var(--muted);
+  --color-on-accent: var(--on-accent);
+  --font-display: var(--font-plaza);
+  --font-sans: var(--font-plaza);
+  --font-mono: var(--font-plaza);
+}
+
+* {
+  border-color: var(--hairline);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bone);
+  color: var(--ink);
+  font-family: var(--font-plaza), Raleway, "Avenir Next", "Segoe UI", Arial, sans-serif;
+  letter-spacing: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::selection {
+  background: var(--wine);
+  color: var(--bone);
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--wine);
+  outline-offset: 3px;
+}
+
+.site-btn,
+.site-btn-outline {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.95rem 1.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.site-btn {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--bone);
+}
+
+.site-btn:hover {
+  border-color: var(--wine);
+  background: var(--wine);
+}
+
+.site-btn-outline {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.site-btn-outline:hover {
+  border-color: var(--wine);
+  background: var(--wine);
+  color: var(--bone);
+}
+
+.section-eyebrow {
+  color: var(--wine);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.section-title {
+  color: var(--ink);
+  font-size: clamp(1.85rem, 3.5vw, 3.25rem);
+  font-weight: 800;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.field-input {
+  width: 100%;
+  border: 1px solid var(--hairline);
+  background: var(--bone);
+  padding: 0.85rem 1rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.field-input:focus-visible {
+  outline: 2px solid var(--wine);
+  outline-offset: 2px;
+}
+
+.plaza-rule {
+  border-color: var(--hairline);
+}

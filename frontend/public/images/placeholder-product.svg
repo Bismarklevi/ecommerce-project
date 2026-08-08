@@ -1,0 +1,11 @@
+<svg width="800" height="1000" viewBox="0 0 800 1000" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="1000" fill="#e9e3d6"/>
+  <rect x="0.5" y="0.5" width="799" height="999" fill="none" stroke="#d9d3c4" stroke-width="1"/>
+  <g opacity="0.55" transform="translate(400,430)">
+    <path d="M -70 -40 L -30 -70 L 0 -50 L 30 -70 L 70 -40 L 45 -10 L 45 120 L -45 120 L -45 -10 Z"
+          fill="none" stroke="#1c1b19" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="0" cy="-50" r="14" fill="none" stroke="#1c1b19" stroke-width="3"/>
+  </g>
+  <text x="400" y="620" text-anchor="middle" font-family="Georgia, serif" font-size="28" letter-spacing="4" fill="#1c1b19" opacity="0.55">KAIRA</text>
+  <text x="400" y="655" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" letter-spacing="2" fill="#1c1b19" opacity="0.4">IMAGE COMING SOON</text>
+</svg>
