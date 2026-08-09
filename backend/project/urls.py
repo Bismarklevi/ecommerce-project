@@ -13,6 +13,7 @@ from promotions.views import CouponValidateView
 from returns.views import ReturnRequestViewSet
 from shipping.views import ShippingZoneViewSet
 from users.views import (
+    AccountDeletionView,
     AddressViewSet,
     ChangePasswordView,
     CurrentUserView,
@@ -20,6 +21,7 @@ from users.views import (
     LogoutView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
+    PersonalDataExportView,
     RegisterView,
     UserViewSet,
 )
@@ -51,6 +53,8 @@ urlpatterns = [
     # `django.urls.resolve("/api/payments/webhook/")` before this fix -- it
     # returned PaymentViewSet, not PaystackWebhookView.
     path("api/me/", CurrentUserView.as_view(), name="current-user"),
+    path("api/me/export/", PersonalDataExportView.as_view(), name="me-data-export"),
+    path("api/me/delete/", AccountDeletionView.as_view(), name="me-delete"),
     path("api/auth/register/", RegisterView.as_view(), name="auth-register"),
     path("api/auth/login/", LoginView.as_view(), name="auth-login"),
     path("api/auth/logout/", LogoutView.as_view(), name="auth-logout"),

@@ -94,8 +94,16 @@ export default function SiteFooter() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-hairline py-6 text-center text-xs text-muted">
-        Copyright © {new Date().getFullYear()} Kaira. All rights reserved.
+      <div className="flex flex-col items-center justify-center gap-2 border-t border-hairline py-6 text-center text-xs text-muted sm:flex-row sm:gap-4">
+        <span>Copyright © {new Date().getFullYear()} Kaira. All rights reserved.</span>
+        <span className="flex gap-4">
+          <Link href="/privacy" className="focus-ring hover:text-wine">
+            Privacy
+          </Link>
+          <Link href="/terms" className="focus-ring hover:text-wine">
+            Terms
+          </Link>
+        </span>
       </div>
     </footer>
   );

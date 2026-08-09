@@ -24,6 +24,9 @@ db.sqlite3
 /frontend/.env*.local
 /frontend/*.tsbuildinfo
 /frontend/next-env.d.ts
+/frontend/test-results/
+/frontend/playwright-report/
+/frontend/.playwright/
 
 # ─────────────────────────────── General ────────────────────────────────
 .DS_Store

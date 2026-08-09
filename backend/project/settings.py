@@ -297,6 +297,42 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
+# ─────────────────────────── Observability ──────────────────────────────
+# Structured console logging (the platform's log aggregator captures stdout).
+# Levels are env-tunable so production can run quieter than local dev.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {"format": "{levelname} {asctime} {name} {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+    },
+    "root": {"handlers": ["console"], "level": config("LOG_LEVEL", default="INFO")},
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": config("DJANGO_LOG_LEVEL", default="INFO"),
+            "propagate": False,
+        },
+    },
+}
+
+# Error tracking. No-ops entirely unless SENTRY_DSN is set, so local/dev and the
+# test run are unaffected; set the DSN in staging/production to get alerts.
+SENTRY_DSN = config("SENTRY_DSN", default="")
+if SENTRY_DSN and "test" not in sys.argv:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=config("SENTRY_TRACES_SAMPLE_RATE", default=0.1, cast=float),
+        environment=config("SENTRY_ENVIRONMENT", default="production"),
+        # Don't ship request bodies / user PII to a third party by default.
+        send_default_pii=False,
+    )
+
 UNFOLD = {
     "SITE_TITLE": "Kaira Admin",
     "SITE_HEADER": "Kaira Ghana E-Commerce",

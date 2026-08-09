@@ -15,10 +15,31 @@ const raleway = Raleway({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const siteDescription =
+  "Kaira is a small edit of considered clothing: tailoring, knitwear, and dresses built to be worn, not just bought.";
+
 export const metadata: Metadata = {
-  title: "Kaira - Considered Clothing",
-  description:
-    "Kaira is a small edit of considered clothing: tailoring, knitwear, and dresses built to be worn, not just bought.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Kaira — Considered Clothing",
+    // Child pages set just their own title; this appends the brand.
+    template: "%s | Kaira",
+  },
+  description: siteDescription,
+  applicationName: "Kaira",
+  openGraph: {
+    title: "Kaira — Considered Clothing",
+    description: siteDescription,
+    siteName: "Kaira",
+    type: "website",
+    locale: "en_GH",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kaira — Considered Clothing",
+    description: siteDescription,
+  },
 };
 
 // Applies the saved/preferred color scheme before first paint, so there's

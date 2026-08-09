@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from .mail import PlainAsciiEmailMessage
 from .models import Address
+from .privacy import anonymize_user, build_personal_data_export
 from .throttling import LoginRateThrottle, PasswordResetRateThrottle, RegisterRateThrottle
 from .serializers import (
     AddressSerializer,
@@ -108,6 +109,38 @@ class LogoutView(APIView):
         Token.objects.filter(user=request.user).delete()
         logout(request)
         return Response(status=204)
+
+
+class PersonalDataExportView(APIView):
+    """Right of access (GDPR / Ghana Act 843): hands the signed-in user a JSON
+    file of everything personal we hold about them."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Account"], request=None, responses={200: dict})
+    def get(self, request, *args, **kwargs):
+        response = Response(build_personal_data_export(request.user))
+        response["Content-Disposition"] = 'attachment; filename="kaira-my-data.json"'
+        return response
+
+
+class AccountDeletionView(APIView):
+    """Right to erasure. Requires the account password in the body so a stolen
+    token alone can't destroy an account. Orders/payments are retained in
+    anonymized form for legal record-keeping (see users.privacy.anonymize_user)."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Account"], request=None, responses={204: None, 400: None})
+    def post(self, request, *args, **kwargs):
+        password = request.data.get("password", "")
+        if not request.user.check_password(password):
+            return Response(
+                {"detail": "Password is incorrect."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        anonymize_user(request.user)
+        logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ChangePasswordView(APIView):
