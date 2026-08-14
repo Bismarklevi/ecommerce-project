@@ -29,11 +29,18 @@ function StatusBanner({ paymentStatus }: { paymentStatus: string }) {
     <div className="border border-hairline bg-bone-2 p-6">
       <p className="mb-1 text-xl font-extrabold uppercase">Confirming your payment...</p>
       <p className="text-sm text-muted">
-        This usually takes a few seconds. Refresh in a moment if this does not update.
+        This usually takes just a few seconds -- this page will update automatically.
       </p>
     </div>
   );
 }
+
+// Paystack's webhook can (and does) arrive a few seconds after the browser
+// is redirected back here -- a single fetch on page load can easily land in
+// that gap and show "still confirming" even though payment already went
+// through. Poll a bounded number of times with backoff instead of relying
+// on the customer to manually refresh.
+const POLL_INTERVALS_MS = [1500, 2000, 2500, 3000, 4000, 5000, 6000]; // ~24s total
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
@@ -46,14 +53,43 @@ function CheckoutSuccessContent() {
     if (!orderId) {
       return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    setNotFound(false);
-    fetch(`/api/orders/${orderId}`)
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((data) => setOrder(data))
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    let attempt = 0;
+
+    async function poll() {
+      if (attempt === 0) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLoading(true);
+        setNotFound(false);
+      }
+      try {
+        const response = await fetch(`/api/orders/${orderId}`);
+        if (!response.ok) throw new Error("not ok");
+        const data: Order = await response.json();
+        if (cancelled) return;
+        setOrder(data);
+        setLoading(false);
+
+        // Still waiting on the webhook and haven't exhausted the poll
+        // schedule yet -- try again rather than leaving the customer
+        // staring at "Confirming your payment..." with no next step.
+        if (data.payment_status === "pending" && attempt < POLL_INTERVALS_MS.length) {
+          const delay = POLL_INTERVALS_MS[attempt];
+          attempt += 1;
+          setTimeout(poll, delay);
+        }
+      } catch {
+        if (!cancelled) {
+          setNotFound(true);
+          setLoading(false);
+        }
+      }
+    }
+
+    poll();
+    return () => {
+      cancelled = true;
+    };
   }, [orderId]);
 
   if (!orderId) {

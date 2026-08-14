@@ -17,7 +17,7 @@ from . import paystack
 from .invoices import generate_invoice_pdf
 from .models import Cart, CartItem, Order, Payment
 from .serializers import CartItemSerializer, CartSerializer, OrderSerializer, PaymentSerializer
-from .services import mark_order_paid, mark_order_payment_failed
+from .services import flag_payment_for_review, mark_order_paid, mark_order_payment_failed
 
 logger = logging.getLogger(__name__)
 
@@ -219,6 +219,16 @@ class CheckoutView(APIView):
         )
         if not created and payment.status == Payment.STATUS_SUCCESS:
             return Response({"detail": "Order is already paid."}, status=status.HTTP_409_CONFLICT)
+        if not created and payment.status == Payment.STATUS_FLAGGED:
+            logger.warning(
+                "Blocked checkout retry on flagged payment %s (order %s) -- needs manual review.",
+                payment.id, order.id,
+            )
+            return Response(
+                {"detail": "There's a problem with this order's payment that needs to be resolved before "
+                            "you can try again. Please contact support."},
+                status=status.HTTP_409_CONFLICT,
+            )
 
         try:
             result = paystack.initialize_transaction(
@@ -310,7 +320,20 @@ class PaystackWebhookView(APIView):
             return Response(status=status.HTTP_502_BAD_GATEWAY)
 
         if event == "charge.success" and verified.get("status") == "success":
-            mark_order_paid(payment.order, payment, raw_response=verified)
+            expected_pesewas = int(payment.amount * 100)
+            actual_pesewas = verified.get("amount")
+            actual_currency = verified.get("currency")
+            if actual_pesewas != expected_pesewas or actual_currency != "GHS":
+                flag_payment_for_review(
+                    payment.order,
+                    payment,
+                    expected_pesewas=expected_pesewas,
+                    actual_pesewas=actual_pesewas,
+                    actual_currency=actual_currency,
+                    raw_response=verified,
+                )
+            else:
+                mark_order_paid(payment.order, payment, raw_response=verified)
         else:
             mark_order_payment_failed(payment.order, payment, reason=verified.get("gateway_response", ""))
 

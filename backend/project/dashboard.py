@@ -71,6 +71,7 @@ def dashboard_callback(request, context):
     pending_reviews = _safe(_pending_reviews_count, 0)
     pending_returns = _safe(services.pending_returns_count, 0)
     abandoned_carts = _safe(services.abandoned_cart_count, 0)
+    flagged_payments = _safe(services.flagged_payments_count, 0)
 
     # Sales Overview period filter: a real query param + full page render per
     # period (rather than fragile client-side JS reaching into Unfold's
@@ -102,12 +103,23 @@ def dashboard_callback(request, context):
             "title": "Pending returns", "value": pending_returns, "footnote": "Needs a decision",
             "tone": "amber" if pending_returns else "green", "url": _url("returns_returnrequest_changelist"),
         },
+        {
+            "title": "Flagged payments", "value": flagged_payments, "footnote": "Amount/currency mismatch",
+            "tone": "red" if flagged_payments else "green",
+            "url": f"{_url('app_payment_changelist')}?status__exact=flagged",
+        },
     ]
 
     # "Needs your attention" reuses the same numbers as the operational KPI
     # row above (Phase 1: don't compute the same thing twice) -- it's just a
     # different presentation (actionable list vs. cards), plus abandoned carts.
     attention_items = []
+    if flagged_payments:
+        attention_items.append({
+            "icon": "\U0001F534", "text": f"{flagged_payments} payment{'s' if flagged_payments != 1 else ''} flagged for amount/currency mismatch",
+            "footnote": "Financial integrity check failed -- verify in Paystack dashboard before fulfilling",
+            "url": f"{_url('app_payment_changelist')}?status__exact=flagged", "label": "Review payments",
+        })
     if orders_to_fulfill:
         attention_items.append({
             "icon": "\U0001F534", "text": f"{orders_to_fulfill} order{'s' if orders_to_fulfill != 1 else ''} awaiting fulfillment",

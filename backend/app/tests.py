@@ -212,13 +212,56 @@ class PaystackWebhookTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_charge_success_marks_order_paid(self):
-        with patch.object(paystack, "verify_transaction", return_value={"status": "success"}):
+        with patch.object(
+            paystack, "verify_transaction",
+            return_value={"status": "success", "amount": 10000, "currency": "GHS"},
+        ):
             response = self._post_webhook("charge.success", "wh-ref")
         self.assertEqual(response.status_code, 200)
         self.order.refresh_from_db()
         self.payment.refresh_from_db()
         self.assertEqual(self.payment.status, Payment.STATUS_SUCCESS)
         self.assertEqual(self.order.status, Order.STATUS_PAID)
+
+    def test_amount_mismatch_flags_payment_instead_of_marking_paid(self):
+        # The core security check: Paystack says charge.success and even
+        # verify_transaction reports "success", but the confirmed amount
+        # (9000 pesewas = GH\u20b590) doesn't match what this order actually
+        # costs (10000 pesewas = GH\u20b5100). This must never be treated as a
+        # successful payment.
+        with patch.object(
+            paystack, "verify_transaction",
+            return_value={"status": "success", "amount": 9000, "currency": "GHS"},
+        ):
+            response = self._post_webhook("charge.success", "wh-ref")
+        self.assertEqual(response.status_code, 200)  # webhook itself was handled fine
+        self.order.refresh_from_db()
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.STATUS_FLAGGED)
+        self.assertNotEqual(self.order.status, Order.STATUS_PAID)
+        self.assertNotEqual(self.order.payment_status, Order.PAYMENT_PAID)
+
+    def test_currency_mismatch_flags_payment_instead_of_marking_paid(self):
+        with patch.object(
+            paystack, "verify_transaction",
+            return_value={"status": "success", "amount": 10000, "currency": "NGN"},
+        ):
+            response = self._post_webhook("charge.success", "wh-ref")
+        self.assertEqual(response.status_code, 200)
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.STATUS_FLAGGED)
+
+    def test_flagged_payment_does_not_release_stock(self):
+        # An anomalous confirmation is exactly the case where an automated
+        # stock-release decision could be wrong -- it must be left alone for
+        # a human to resolve, same as a paid order's stock would be.
+        with patch.object(
+            paystack, "verify_transaction",
+            return_value={"status": "success", "amount": 1, "currency": "GHS"},
+        ):
+            self._post_webhook("charge.success", "wh-ref")
+        self.variant.refresh_from_db()
+        self.assertEqual(self.variant.stock_quantity, 2, "flagged payment must not release reserved stock")
 
     def test_unhandled_event_type_is_ignored_not_treated_as_failure(self):
         # Regression test: any non-charge.success event used to be treated as
@@ -232,7 +275,10 @@ class PaystackWebhookTests(TestCase):
         self.assertEqual(self.variant.stock_quantity, 2, "stock reserved at checkout must be untouched")
 
     def test_stray_failure_after_success_cannot_downgrade_payment_or_release_stock(self):
-        with patch.object(paystack, "verify_transaction", return_value={"status": "success"}):
+        with patch.object(
+            paystack, "verify_transaction",
+            return_value={"status": "success", "amount": 10000, "currency": "GHS"},
+        ):
             self._post_webhook("charge.success", "wh-ref")
 
         response = self._post_webhook("charge.failed", "wh-ref")
@@ -244,6 +290,29 @@ class PaystackWebhookTests(TestCase):
         self.assertEqual(self.payment.status, Payment.STATUS_SUCCESS)
         self.assertEqual(self.order.payment_status, Order.PAYMENT_PAID)
         self.assertEqual(self.variant.stock_quantity, 2, "a paid order's stock must not be released")
+
+
+class CheckoutFlaggedPaymentTests(TestCase):
+    """A flagged payment means Paystack may have already taken the customer's
+    money (just not the expected amount) -- checkout must refuse to let them
+    try again until a human resolves it, rather than silently reusing the
+    same reference for another attempt."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="flagged_buyer", email="f@example.com", password="pw")
+        self.order = Order.objects.create(user=self.user, total_amount=Decimal("100.00"))
+        self.payment = Payment.objects.create(
+            order=self.order, provider="paystack", reference="flagged-ref",
+            amount=Decimal("100.00"), status=Payment.STATUS_FLAGGED,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def test_checkout_retry_is_blocked_on_flagged_payment(self):
+        response = self.client.post(f"/api/orders/{self.order.id}/checkout/")
+        self.assertEqual(response.status_code, 409)
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.STATUS_FLAGGED, "must not silently reset/reuse a flagged payment")
 
 
 class InvoicePDFTests(TestCase):

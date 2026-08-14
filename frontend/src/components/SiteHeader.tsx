@@ -9,15 +9,20 @@ import ThemeToggle from "./ThemeToggle";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
-  { href: "/shop?category=dresses", label: "Dresses" },
-  { href: "/shop?category=knitwear", label: "Knitwear" },
-  { href: "/shop?category=tailoring", label: "Tailoring" },
 ];
 
 export default function SiteHeader() {
   const { count, signedIn, refresh } = useCart();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+
+  function handleSearchSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const query = searchValue.trim();
+    setMenuOpen(false);
+    router.push(query ? `/shop?search=${encodeURIComponent(query)}` : "/shop");
+  }
 
   async function handleSignOut() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -71,7 +76,24 @@ export default function SiteHeader() {
               {link.label}
             </Link>
           ))}
+          <Link href="/account" className="focus-ring transition-colors hover:text-wine">
+            Account
+          </Link>
         </nav>
+
+        <form onSubmit={handleSearchSubmit} className="mt-8 hidden lg:block">
+          <label htmlFor="site-search" className="sr-only">
+            Search products
+          </label>
+          <input
+            id="site-search"
+            type="search"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Search products..."
+            className="field-input text-sm"
+          />
+        </form>
 
         <div className="mt-auto hidden space-y-5 text-sm font-semibold uppercase tracking-[0.1em] lg:block">
           <div className="flex items-center justify-between border-b border-hairline pb-4">
@@ -96,6 +118,19 @@ export default function SiteHeader() {
 
       {menuOpen && (
         <div className="border-b border-hairline bg-bone px-4 py-5 shadow-sm sm:px-6 lg:hidden">
+          <form onSubmit={handleSearchSubmit} className="mb-5">
+            <label htmlFor="site-search-mobile" className="sr-only">
+              Search products
+            </label>
+            <input
+              id="site-search-mobile"
+              type="search"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Search products..."
+              className="field-input text-sm"
+            />
+          </form>
           <nav className="flex flex-col gap-4 text-sm font-bold uppercase tracking-[0.12em]">
             {NAV_LINKS.map((link) => (
               <Link
@@ -107,6 +142,9 @@ export default function SiteHeader() {
                 {link.label}
               </Link>
             ))}
+            <Link href="/account" className="focus-ring" onClick={() => setMenuOpen(false)}>
+              Account
+            </Link>
           </nav>
           <div className="mt-5 flex items-center justify-between border-t border-hairline pt-5">
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">

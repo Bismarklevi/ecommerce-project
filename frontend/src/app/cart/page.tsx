@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/currency";
-import { PLACEHOLDER_IMAGE } from "@/lib/constants";
+import { PLACEHOLDER_IMAGE, normalizeImageUrl } from "@/lib/constants";
 
 const FREE_SHIPPING_THRESHOLD = 500;
 
@@ -85,7 +85,7 @@ export default function CartPage() {
                 className="focus-ring relative aspect-[3/4] w-24 shrink-0 bg-bone-2 sm:w-32"
               >
                 <Image
-                  src={item.product_image || PLACEHOLDER_IMAGE}
+                  src={normalizeImageUrl(item.product_image) || PLACEHOLDER_IMAGE}
                   alt={item.product_name}
                   fill
                   sizes="140px"

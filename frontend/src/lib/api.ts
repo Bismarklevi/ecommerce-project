@@ -1,4 +1,5 @@
 import { Category, Product, ProductVariant } from "./types";
+import { normalizeImageUrl } from "./constants";
 
 // ---------------------------------------------------------------------------
 // Real Django backend integration. Every function below fetches from the
@@ -112,15 +113,19 @@ interface BackendProduct {
 }
 
 function mapCategory(raw: BackendCategory): Category {
-  return { id: raw.id, slug: raw.slug, name: raw.name, image: raw.image || "" };
+  return { id: raw.id, slug: raw.slug, name: raw.name, image: normalizeImageUrl(raw.image || "") };
 }
 
 function mapProduct(raw: BackendProduct): Product {
   const images =
     raw.images.length > 0
-      ? raw.images.map((img) => ({ id: img.id, image: img.image, alt: img.alt_text || raw.name }))
+      ? raw.images.map((img) => ({
+          id: img.id,
+          image: normalizeImageUrl(img.image),
+          alt: img.alt_text || raw.name,
+        }))
       : raw.primary_image_url
-        ? [{ id: 0, image: raw.primary_image_url, alt: raw.name }]
+        ? [{ id: 0, image: normalizeImageUrl(raw.primary_image_url), alt: raw.name }]
         : [];
 
   // One variant per size in this catalog (color is always "Default" -- see
@@ -155,10 +160,14 @@ function mapProduct(raw: BackendProduct): Product {
 export async function getProducts(params?: {
   category?: string;
   sort?: "featured" | "price-asc" | "price-desc" | "new";
+  search?: string;
 }): Promise<Product[]> {
   const query = new URLSearchParams();
   if (params?.category && params.category !== "all") {
     query.set("category", params.category);
+  }
+  if (params?.search) {
+    query.set("search", params.search);
   }
   switch (params?.sort) {
     case "price-asc":

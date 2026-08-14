@@ -45,7 +45,24 @@ export default function ThemeToggle() {
       className="focus-ring flex h-9 w-9 items-center justify-center text-ink transition-colors hover:text-wine"
     >
       {isDark === null ? (
-        <span className="block h-[18px] w-[18px]" />
+        // useSyncExternalStore must match the server snapshot (null) on the
+        // very first client render before it can sync to the live DOM value
+        // -- that's inherent to how it avoids hydration mismatches, not
+        // something a longer timeout would fix. Showing a real icon here
+        // instead of a blank placeholder means the button is never
+        // literally empty, even for this brief guaranteed window.
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+        </svg>
       ) : isDark ? (
         <svg
           width="18"

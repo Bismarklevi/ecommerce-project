@@ -13,6 +13,7 @@ export default function ShopClient() {
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get("category") ?? "all";
   const activeSort = (searchParams.get("sort") as SortValue) ?? "featured";
+  const activeSearch = searchParams.get("search") ?? "";
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -24,7 +25,7 @@ export default function ShopClient() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    Promise.all([getProducts({ category: activeCategory, sort: activeSort }), getCategories()])
+    Promise.all([getProducts({ category: activeCategory, sort: activeSort, search: activeSearch || undefined }), getCategories()])
       .then(([p, c]) => {
         if (cancelled) return;
         setProducts(p);
@@ -42,11 +43,11 @@ export default function ShopClient() {
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, activeSort]);
+  }, [activeCategory, activeSort, activeSearch]);
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "all" || value === "featured") {
+    if (value === "all" || value === "featured" || value === "") {
       params.delete(key);
     } else {
       params.set(key, value);
@@ -64,6 +65,19 @@ export default function ShopClient() {
             Discover the latest styles, timeless classics, and premium essentials in the Kaira
             catalog.
           </p>
+          {activeSearch && (
+            <p className="mt-4 text-sm text-muted">
+              Showing results for <span className="font-bold text-ink">&ldquo;{activeSearch}&rdquo;</span>
+              {" - "}
+              <button
+                type="button"
+                onClick={() => setParam("search", "")}
+                className="focus-ring underline underline-offset-4 hover:text-wine"
+              >
+                clear search
+              </button>
+            </p>
+          )}
         </div>
       </section>
 
@@ -167,8 +181,14 @@ export default function ShopClient() {
             </div>
           ) : products.length === 0 ? (
             <div className="border border-hairline py-24 text-center">
-              <p className="text-xl font-extrabold uppercase">Nothing here yet</p>
-              <p className="mt-3 text-sm text-muted">Try a different category.</p>
+              <p className="text-xl font-extrabold uppercase">
+                {activeSearch ? `Nothing matched "${activeSearch}"` : "Nothing here yet"}
+              </p>
+              <p className="mt-3 text-sm text-muted">
+                {activeSearch
+                  ? "Try a shorter search, or browse by category instead."
+                  : "Try a different category."}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-3 xl:grid-cols-4">

@@ -210,12 +210,19 @@ class Payment(models.Model):
     STATUS_SUCCESS = "success"
     STATUS_FAILED = "failed"
     STATUS_REFUNDED = "refunded"
+    # A Paystack-verified charge.success whose amount or currency doesn't
+    # match what this order expected. Never auto-resolved -- see
+    # PaystackWebhookView. Distinct from FAILED (a routine declined card)
+    # because this means Paystack confirms money moved, just not the right
+    # amount, which needs a human to look at, not a "customer can just retry".
+    STATUS_FLAGGED = "flagged"
 
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
         (STATUS_SUCCESS, "Success"),
         (STATUS_FAILED, "Failed"),
         (STATUS_REFUNDED, "Refunded"),
+        (STATUS_FLAGGED, "Flagged — needs review"),
     ]
 
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="payment")

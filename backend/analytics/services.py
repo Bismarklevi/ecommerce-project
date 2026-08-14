@@ -143,6 +143,17 @@ def pending_returns_count() -> int:
     return ReturnRequest.objects.filter(status=ReturnRequest.STATUS_REQUESTED).count()
 
 
+def flagged_payments_count() -> int:
+    """Payments where Paystack confirmed a charge.success but the amount or
+    currency didn't match the order -- see app.services.flag_payment_for_review.
+    Surfaced on the dashboard deliberately: this is a financial-integrity
+    signal, not routine operational noise, and shouldn't only be discoverable
+    by someone who already knows to filter the Payments list for it."""
+    from app.models import Payment
+
+    return Payment.objects.filter(status=Payment.STATUS_FLAGGED).count()
+
+
 def inventory_health() -> dict:
     from products.models import Product, ProductVariant
 

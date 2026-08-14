@@ -5,6 +5,7 @@ to be correct under concurrency (two customers buying the last unit at once) and
 correct against an external system (Paystack), so it gets its own tests and isn't
 tangled with HTTP request/response shaping.
 """
+import logging
 from decimal import Decimal
 
 from django.db import transaction
@@ -13,6 +14,8 @@ from django.db.models import F
 from products.models import ProductVariant
 
 from .models import Order, Payment
+
+logger = logging.getLogger(__name__)
 
 
 class InsufficientStockError(Exception):
@@ -92,6 +95,48 @@ def mark_order_paid(order: Order, payment: Payment, raw_response: dict | None = 
     order.save(update_fields=["payment_status", "updated_at"])
     if order.status == Order.STATUS_PENDING:
         order.transition_to(Order.STATUS_PAID)
+
+
+@transaction.atomic
+def flag_payment_for_review(
+    order: Order,
+    payment: Payment,
+    *,
+    expected_pesewas: int,
+    actual_pesewas: int | None,
+    actual_currency: str | None,
+    raw_response: dict,
+) -> None:
+    """Paystack confirmed the charge succeeded, but the amount and/or currency
+    it confirms don't match what this order expects -- per Paystack's own
+    integration guidance, the webhook body and even a verify_transaction
+    response must never be trusted on amount alone. This never happens for a
+    normal declined card (that's charge.failed, handled separately) or a
+    normal successful payment; when it does happen, it means either a bug
+    upstream of this check, a stale/mismatched reference somehow reaching
+    this webhook, or an active manipulation attempt. Any of those wants a
+    human looking at it before the order is fulfilled -- not an automated
+    "close enough" acceptance, and not an automated cancellation that could
+    be wrong the other way if this is actually a legitimate case with a
+    reference collision.
+
+    Logged at CRITICAL specifically so this is impossible to miss in
+    production log monitoring/alerting -- a mismatched payment amount is a
+    financial-integrity event, not a routine warning.
+    """
+    logger.critical(
+        "PAYMENT AMOUNT/CURRENCY MISMATCH: order=%s payment=%s reference=%s "
+        "expected_pesewas=%s actual_pesewas=%s actual_currency=%s -- "
+        "payment flagged for manual review, order NOT marked paid.",
+        order.id, payment.id, payment.reference,
+        expected_pesewas, actual_pesewas, actual_currency,
+    )
+    payment.status = Payment.STATUS_FLAGGED
+    payment.raw_response = raw_response
+    payment.save(update_fields=["status", "raw_response", "updated_at"])
+    # order.status/payment_status and stock are deliberately left untouched --
+    # see docstring. A staff member resolves this from the admin after
+    # checking the real transaction in the Paystack dashboard.
 
 
 @transaction.atomic

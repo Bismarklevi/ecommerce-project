@@ -1,4 +1,6 @@
+import re
 import sys
+import warnings
 from pathlib import Path
 
 
@@ -129,9 +131,41 @@ CLOUDFLARE_R2_ACCESS_KEY_ID = config("CLOUDFLARE_R2_ACCESS_KEY_ID", default="")
 CLOUDFLARE_R2_SECRET_ACCESS_KEY = config("CLOUDFLARE_R2_SECRET_ACCESS_KEY", default="")
 CLOUDFLARE_R2_REGION_NAME = config("CLOUDFLARE_R2_REGION_NAME", default="auto")
 CLOUDFLARE_R2_CUSTOM_DOMAIN = config("CLOUDFLARE_R2_CUSTOM_DOMAIN", default="")
+# Defensive: Cloudflare's dashboard displays this domain WITH a protocol
+# prefix ("https://pub-xxxx.r2.dev"), so pasting that whole displayed value
+# rather than just the hostname is an easy mistake -- strip it here rather
+# than silently building a broken "https://https://..." URL below.
+CLOUDFLARE_R2_CUSTOM_DOMAIN = re.sub(r"^https?://", "", CLOUDFLARE_R2_CUSTOM_DOMAIN).rstrip("/")
 CLOUDFLARE_R2_LOCATION = config("CLOUDFLARE_R2_LOCATION", default="media")
 
-if USE_CLOUDFLARE_R2:
+# USE_CLOUDFLARE_R2=true alone isn't enough to actually switch storage
+# backends -- it also requires the credential fields to have been filled in
+# with real values, not the "replace-me" placeholders .env ships with. This
+# is deliberate: a previous QA pass on this project found that enabling R2
+# with incomplete credentials made every image upload crash with a 500
+# (S3Boto3Storage tried to talk to a nonexistent endpoint). Falling back to
+# local disk storage until credentials are genuinely present means
+# USE_CLOUDFLARE_R2=true can be left on permanently -- pasting in real
+# values is the only step left to actually activate R2, nothing else needs
+# to change. See backend/CLOUDFLARE_SETUP.md.
+_r2_credentials_present = bool(
+    CLOUDFLARE_R2_BUCKET_NAME
+    and CLOUDFLARE_R2_ENDPOINT_URL and CLOUDFLARE_R2_ENDPOINT_URL != "replace-me"
+    and CLOUDFLARE_R2_ACCESS_KEY_ID and CLOUDFLARE_R2_ACCESS_KEY_ID != "replace-me"
+    and CLOUDFLARE_R2_SECRET_ACCESS_KEY and CLOUDFLARE_R2_SECRET_ACCESS_KEY != "replace-me"
+    and CLOUDFLARE_R2_CUSTOM_DOMAIN and CLOUDFLARE_R2_CUSTOM_DOMAIN != "replace-me"
+)
+CLOUDFLARE_R2_ACTIVE = USE_CLOUDFLARE_R2 and _r2_credentials_present
+
+if USE_CLOUDFLARE_R2 and not _r2_credentials_present:
+    warnings.warn(
+        "USE_CLOUDFLARE_R2=true but CLOUDFLARE_R2_* credentials are still "
+        "placeholders -- falling back to local disk storage for media until "
+        "real values are set in .env. See backend/CLOUDFLARE_SETUP.md.",
+        RuntimeWarning,
+    )
+
+if CLOUDFLARE_R2_ACTIVE:
     MEDIA_URL = (
         f"https://{CLOUDFLARE_R2_CUSTOM_DOMAIN.rstrip('/')}/media/"
         if CLOUDFLARE_R2_CUSTOM_DOMAIN
@@ -253,6 +287,28 @@ SPECTACULAR_SETTINGS = {
 PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", default="")
 PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY", default="")
 PAYSTACK_BASE_URL = "https://api.paystack.co"
+
+# Paystack uses the same API endpoint for test and live -- the key prefix is
+# the ONLY thing that tells you which mode you're actually in. Surfacing a
+# mismatch loudly here beats discovering it via "why did a live card just
+# get charged in staging" or "why has nothing been charged in production for
+# a week" days later.
+if PAYSTACK_SECRET_KEY:
+    if DEBUG and PAYSTACK_SECRET_KEY.startswith("sk_live_"):
+        warnings.warn(
+            "PAYSTACK_SECRET_KEY is a LIVE key (sk_live_...) but DEBUG=True. "
+            "Real cards will be charged real money in what looks like a dev/test "
+            "environment. If this isn't intentional, switch to a test key (sk_test_...).",
+            RuntimeWarning,
+        )
+    elif not DEBUG and PAYSTACK_SECRET_KEY.startswith("sk_test_"):
+        warnings.warn(
+            "PAYSTACK_SECRET_KEY is a TEST key (sk_test_...) but DEBUG=False. "
+            "No real payments will process -- customers can 'complete' checkout "
+            "but no money moves. If this is meant to be production, switch to "
+            "the live key (sk_live_...) from the Paystack dashboard.",
+            RuntimeWarning,
+        )
 
 # Used to build the Paystack callback_url (where the customer lands after paying)
 # and nowhere else -- keeping the redirect target server-side avoids trusting a

@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "127.0.0.1", port: "8000", pathname: "/media/**" },
       { protocol: "http", hostname: "localhost", port: "8000", pathname: "/media/**" },
       ...(mediaHost ? [{ protocol: "https" as const, hostname: mediaHost, pathname: "/**" }] : []),
+      // The backend falls back to a hotlinked static URL (Category.image_url,
+      // Product.images[].image_url) whenever no file has been uploaded --
+      // see products/serializers.py:_resolve_image(). Categories seeded via
+      // seed_static_catalog_images.py / seed_womens_catalog.py (Activewear,
+      // Bags & Accessories, etc.) rely on exactly this fallback, so these
+      // hosts need to be allowed or next/image refuses to load them at all.
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "images.pexels.com" },
     ],
     // Next.js 16 added an SSRF guard that refuses to optimize images from
     // hosts resolving to a private/loopback IP -- which 127.0.0.1 always is
