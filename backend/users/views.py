@@ -12,6 +12,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .mail import PlainAsciiEmailMessage
+from .google import (
+    GoogleAuthError,
+    GoogleNotConfigured,
+    get_or_create_user_for_google,
+    verify_google_credential,
+)
 from .models import Address
 from .privacy import anonymize_user, build_personal_data_export
 from .throttling import LoginRateThrottle, PasswordResetRateThrottle, RegisterRateThrottle
@@ -97,6 +103,42 @@ class LoginView(APIView):
             return Response({"detail": "Invalid credentials."}, status=401)
         login(request, user)
         return _user_response_with_token(user)
+
+
+class GoogleCredentialSerializer(serializers.Serializer):
+    credential = serializers.CharField(write_only=True)
+
+
+class GoogleLoginView(APIView):
+    """Sign in or sign up with a Google ID token from Google Identity Services.
+    One endpoint for both: the token is the proof either way, and whether an
+    account exists for that email is our lookup, not the client's claim.
+    201 when an account was created, 200 when an existing one was matched."""
+
+    permission_classes = [permissions.AllowAny]
+    # No email/username in the body, so this keys on client IP (see throttling).
+    throttle_classes = [LoginRateThrottle]
+
+    @extend_schema(
+        tags=["Auth"],
+        request=GoogleCredentialSerializer,
+        responses={200: UserSerializer, 201: UserSerializer, 401: None, 503: None},
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = GoogleCredentialSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            info = verify_google_credential(serializer.validated_data["credential"])
+        except GoogleNotConfigured as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except GoogleAuthError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user, created = get_or_create_user_for_google(info)
+        if not user.is_active:
+            return Response({"detail": "This account is disabled."}, status=status.HTTP_401_UNAUTHORIZED)
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        return _user_response_with_token(user, status_code=201 if created else 200)
 
 
 class LogoutView(APIView):
@@ -246,6 +288,9 @@ class AddressViewSet(viewsets.ModelViewSet):
 
     serializer_class = AddressSerializer
     permission_classes = [permissions.IsAuthenticated]
+    # Never served (get_queryset scopes to the user); present so schema
+    # generation can type the {id} path parameter instead of guessing "string".
+    queryset = Address.objects.none()
 
     def get_queryset(self):
         return Address.objects.filter(user=self.request.user)

@@ -82,3 +82,27 @@ class AdminImageUploadTests(TestCase):
         payload = next(row for row in results if row["slug"] == "test-shirt")
         self.assertEqual(len(payload["images"]), 1)
         self.assertTrue(payload["images"][0]["image"].startswith("http"))
+
+
+class VariantSizeOrderTests(TestCase):
+    def test_variants_are_listed_in_garment_size_order(self):
+        from decimal import Decimal
+
+        from rest_framework.test import APIClient
+
+        from .models import Category, Product, ProductVariant
+
+        category = Category.objects.create(name="Dresses")
+        product = Product.objects.create(
+            category=category, name="Order Test Dress", description="d", base_price=Decimal("50.00")
+        )
+        for i, size in enumerate(["L", "XS", "M", "XL", "S"]):
+            ProductVariant.objects.create(
+                product=product, sku=f"ORD-{i}", size=size, color="Default",
+                stock_quantity=1, price=Decimal("50.00"),
+            )
+
+        payload = APIClient().get("/api/products/").json()
+        results = payload["results"] if isinstance(payload, dict) else payload
+        match = next(p for p in results if p["name"] == "Order Test Dress")
+        self.assertEqual([v["size"] for v in match["variants"]], ["XS", "S", "M", "L", "XL"])

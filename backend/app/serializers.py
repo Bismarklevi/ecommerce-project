@@ -1,4 +1,5 @@
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from products.models import ProductVariant
@@ -39,18 +40,23 @@ class CartItemSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at", "updated_at"]
 
+    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
     def get_unit_price(self, obj):
         return obj.unit_price
 
+    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
     def get_line_total(self, obj):
         return obj.line_total
 
+    @extend_schema_field(serializers.CharField())
     def get_product_name(self, obj):
         return obj.product_variant.product.name
 
+    @extend_schema_field(serializers.CharField())
     def get_product_slug(self, obj):
         return obj.product_variant.product.slug
 
+    @extend_schema_field(serializers.URLField(allow_blank=True))
     def get_product_image(self, obj):
         request = self.context.get("request")
         image = obj.product_variant.product.primary_image
@@ -70,9 +76,11 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ["id", "user", "items", "item_count", "subtotal", "created_at", "updated_at"]
         read_only_fields = ["created_at", "updated_at"]
 
+    @extend_schema_field(serializers.IntegerField())
     def get_item_count(self, obj):
         return obj.item_count
 
+    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
     def get_subtotal(self, obj):
         return obj.subtotal
 
@@ -174,6 +182,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "delivered_at",
         ]
 
+    @extend_schema_field(serializers.IntegerField())
     def get_item_count(self, obj):
         return obj.item_count
 

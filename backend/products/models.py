@@ -149,3 +149,23 @@ class Review(models.Model):
     def __str__(self):
         return f"{self.user.username} review on {self.product.name}"
 
+
+
+# Garment sizes in the order a shopper expects them, not the order the
+# alphabet puts them in ("L, M, S, XL, XS" is what Meta.ordering = ["size"]
+# produced). Anything not listed sorts after these, alphabetically.
+SIZE_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "ONE SIZE"]
+
+
+def variants_in_size_order():
+    """Queryset for a Prefetch("variants", ...) so nested serializers hand out
+    sizes in SIZE_ORDER. Kept as a function: the Case expression is built at
+    call time, and a module-level queryset would be evaluated at import."""
+    from django.db.models import Case, IntegerField, Value, When
+
+    rank = Case(
+        *[When(size__iexact=s, then=Value(i)) for i, s in enumerate(SIZE_ORDER)],
+        default=Value(len(SIZE_ORDER)),
+        output_field=IntegerField(),
+    )
+    return ProductVariant.objects.annotate(size_rank=rank).order_by("size_rank", "size", "color")

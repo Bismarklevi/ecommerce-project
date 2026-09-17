@@ -190,3 +190,101 @@ class PasswordResetTests(TestCase):
             "/api/auth/login/", {"username": "reset_buyer", "password": "NewPass456!"}, format="json",
         )
         self.assertEqual(login.status_code, 200)
+
+
+class GoogleLoginTests(TestCase):
+    """verify_google_credential is patched: these test our side of the seam
+    (account creation, linking, error mapping), not Google's JWT maths."""
+
+    GOOD = {"email": "Ama.Boateng@gmail.com", "given_name": "Ama", "family_name": "Boateng", "sub": "123"}
+
+    def setUp(self):
+        from unittest.mock import patch
+
+        self.client = APIClient()
+        patcher = patch("users.views.verify_google_credential", return_value=dict(self.GOOD))
+        self.verify = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _post(self):
+        return self.client.post("/api/auth/google/", {"credential": "x.y.z"}, format="json")
+
+    def test_first_sign_in_creates_account_with_unusable_password(self):
+        response = self._post()
+        self.assertEqual(response.status_code, 201, response.data)
+        user = User.objects.get(email__iexact=self.GOOD["email"])
+        self.assertEqual(user.username, "amaboateng")
+        self.assertEqual(user.first_name, "Ama")
+        self.assertFalse(user.has_usable_password())
+        self.assertIn("token", response.data)
+        self.assertEqual(self.client.get("/api/me/").data["email"], self.GOOD["email"])
+
+    def test_existing_account_is_linked_by_verified_email_not_duplicated(self):
+        existing = User.objects.create_user(
+            username="ama", email="ama.boateng@gmail.com", password="pw-original!"
+        )
+        response = self._post()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["id"], existing.id)
+        self.assertEqual(User.objects.filter(email__iexact=self.GOOD["email"]).count(), 1)
+        existing.refresh_from_db()
+        self.assertTrue(existing.check_password("pw-original!"))  # untouched
+
+    def test_username_collision_gets_a_suffix(self):
+        User.objects.create_user(username="amaboateng", email="other@example.com", password="pw")
+        response = self._post()
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["username"], "amaboateng2")
+
+    def test_unverifiable_credential_is_401_and_creates_nothing(self):
+        from users.google import GoogleAuthError
+
+        self.verify.side_effect = GoogleAuthError("Google sign-in could not be verified.")
+        response = self._post()
+        self.assertEqual(response.status_code, 401)
+        self.assertFalse(User.objects.filter(email__iexact=self.GOOD["email"]).exists())
+
+    def test_unconfigured_server_is_503(self):
+        from users.google import GoogleNotConfigured
+
+        self.verify.side_effect = GoogleNotConfigured("Google sign-in is not configured on this server.")
+        self.assertEqual(self._post().status_code, 503)
+
+    def test_missing_credential_is_400(self):
+        response = self.client.post("/api/auth/google/", {}, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.verify.assert_not_called()
+
+
+class GoogleVerifierTests(TestCase):
+    """The unpatched verifier, with google-auth's own call stubbed."""
+
+    def test_refuses_when_not_configured(self):
+        from django.test import override_settings
+
+        from users.google import GoogleNotConfigured, verify_google_credential
+
+        with override_settings(GOOGLE_CLIENT_ID=""):
+            with self.assertRaises(GoogleNotConfigured):
+                verify_google_credential("x.y.z")
+
+    def test_refuses_unverified_email_and_wrong_issuer(self):
+        from unittest.mock import patch
+
+        from django.test import override_settings
+
+        from users.google import GoogleAuthError, verify_google_credential
+
+        base = {"iss": "accounts.google.com", "email": "a@b.c", "email_verified": True, "sub": "1"}
+        with override_settings(GOOGLE_CLIENT_ID="cid"):
+            with patch("users.google.id_token.verify_oauth2_token", return_value={**base, "email_verified": False}):
+                with self.assertRaises(GoogleAuthError):
+                    verify_google_credential("t")
+            with patch("users.google.id_token.verify_oauth2_token", return_value={**base, "iss": "evil.example"}):
+                with self.assertRaises(GoogleAuthError):
+                    verify_google_credential("t")
+            with patch("users.google.id_token.verify_oauth2_token", side_effect=ValueError("bad sig")):
+                with self.assertRaises(GoogleAuthError):
+                    verify_google_credential("t")
+            with patch("users.google.id_token.verify_oauth2_token", return_value=base):
+                self.assertEqual(verify_google_credential("t")["email"], "a@b.c")

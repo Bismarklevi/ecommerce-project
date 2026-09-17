@@ -3,6 +3,7 @@ from rest_framework import serializers
 from users.serializers import UserSerializer
 
 from .models import Category, Product, ProductImage, ProductVariant, Review
+from drf_spectacular.utils import extend_schema_field
 
 
 def _absolute_url(request, url):
@@ -42,9 +43,11 @@ class CategorySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    @extend_schema_field(serializers.IntegerField())
     def get_product_count(self, obj):
         return getattr(obj, "product_count", obj.products.count())
 
+    @extend_schema_field(serializers.URLField())
     def get_image(self, obj):
         request = self.context.get("request")
         return _resolve_image(request, obj.image, obj.image_url)
@@ -57,6 +60,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ["id", "image", "alt_text", "credit", "position", "created_at", "updated_at"]
 
+    @extend_schema_field(serializers.URLField())
     def get_image(self, obj):
         request = self.context.get("request")
         return _resolve_image(request, obj.image, obj.image_url)
@@ -81,6 +85,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    @extend_schema_field(serializers.DecimalField(max_digits=10, decimal_places=2))
     def get_effective_price(self, obj):
         return obj.effective_price
 
@@ -114,6 +119,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    @extend_schema_field(serializers.URLField())
     def get_primary_image_url(self, obj):
         request = self.context.get("request")
         image = obj.primary_image
@@ -121,9 +127,11 @@ class ProductListSerializer(serializers.ModelSerializer):
             return ""
         return _resolve_image(request, image.image, image.image_url)
 
+    @extend_schema_field(serializers.IntegerField())
     def get_review_count(self, obj):
         return getattr(obj, "review_count", obj.reviews.count())
 
+    @extend_schema_field(serializers.FloatField(allow_null=True))
     def get_average_rating(self, obj):
         return getattr(obj, "average_rating", None)
 
@@ -134,6 +142,7 @@ class ProductDetailSerializer(ProductListSerializer):
     class Meta(ProductListSerializer.Meta):
         fields = ProductListSerializer.Meta.fields + ["reviews"]
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_reviews(self, obj):
         request = self.context.get("request")
         return ReviewSerializer(obj.reviews.select_related("user"), many=True, context={"request": request}).data
@@ -164,6 +173,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["product", "user", "is_approved", "created_at", "updated_at"]
 
+    @extend_schema_field(ProductListSerializer)
     def get_product(self, obj):
         return ProductListSerializer(obj.product, context=self.context).data
 

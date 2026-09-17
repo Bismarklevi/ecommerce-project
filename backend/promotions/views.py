@@ -27,9 +27,13 @@ class CouponValidateView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = CouponValidateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        return Response(
+        # Through the result serializer, not a raw dict: a bare Decimal in
+        # Response data is rendered as a JSON float (10.0), while every other
+        # money field in this API is a "10.00" string.
+        result = CouponValidateResultSerializer(
             {
                 "code": serializer.validated_data["coupon"].code,
                 "discount_amount": serializer.validated_data["discount_amount"],
             }
         )
+        return Response(result.data)

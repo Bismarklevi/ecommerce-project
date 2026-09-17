@@ -18,11 +18,20 @@ from .invoices import generate_invoice_pdf
 from .models import Cart, CartItem, Order, Payment
 from .serializers import CartItemSerializer, CartSerializer, OrderSerializer, PaymentSerializer
 from .services import flag_payment_for_review, mark_order_paid, mark_order_payment_failed
+from django.core.exceptions import ValidationError as DjangoValidationError
+from promotions.services import apply_coupon_to_order
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
 
+class CheckoutRequestSerializer(serializers.Serializer):
+    coupon_code = serializers.CharField(required=False, allow_blank=True)
+
+
 class CheckoutInitResponseSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    discount_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
     authorization_url = serializers.URLField()
     access_code = serializers.CharField()
     reference = serializers.CharField()
@@ -34,6 +43,9 @@ class CheckoutErrorSerializer(serializers.Serializer):
 
 
 class CartViewSet(viewsets.ModelViewSet):
+    # Never served (get_queryset scopes to the user); present so schema
+    # generation can type the {id} path parameter instead of guessing "string".
+    queryset = Cart.objects.none()
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -96,6 +108,9 @@ class CartItemViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     user's own cart -- get_queryset is the only thing standing between this and
     letting anyone edit anyone else's cart by guessing an id."""
 
+    # Never served (get_queryset scopes to the user); present so schema
+    # generation can type the {id} path parameter instead of guessing "string".
+    queryset = CartItem.objects.none()
     serializer_class = CartItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -138,6 +153,9 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Crea
     address correction while still pending, admin re-ship) goes through a
     dedicated, audited action instead of a bare PATCH/DELETE on the resource."""
 
+    # Never served (get_queryset scopes to the user); present so schema
+    # generation can type the {id} path parameter instead of guessing "string".
+    queryset = Order.objects.none()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -172,6 +190,9 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
     status or amount, or delete the record, would let them fake a refund or
     erase the transaction history a dispute would need."""
 
+    # Never served (get_queryset scopes to the user); present so schema
+    # generation can type the {id} path parameter instead of guessing "string".
+    queryset = Payment.objects.none()
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -193,9 +214,10 @@ class CheckoutView(APIView):
     @extend_schema(
         tags=["Payments"],
         summary="Initiate Paystack checkout for a pending order",
-        request=None,
+        request=CheckoutRequestSerializer,
         responses={
             200: CheckoutInitResponseSerializer,
+            400: OpenApiResponse(CheckoutErrorSerializer, description="Promo code refused"),
             409: OpenApiResponse(CheckoutErrorSerializer, description="Order already paid/checked out"),
             502: OpenApiResponse(CheckoutErrorSerializer, description="Paystack initialization failed"),
         },
@@ -209,6 +231,17 @@ class CheckoutView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
+        # Promo code, if any, is redeemed here and nowhere else -- atomically
+        # with the payment record below, so a validated-but-abandoned code at
+        # the cart never consumes a usage slot (see promotions.services).
+        discount = Decimal("0.00")
+        coupon_code = (request.data.get("coupon_code") or "").strip()
+        if coupon_code:
+            try:
+                discount = apply_coupon_to_order(order, coupon_code, request.user)
+            except DjangoValidationError as exc:
+                return Response({"detail": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
+
         payment, created = Payment.objects.get_or_create(
             order=order,
             defaults={
@@ -217,6 +250,11 @@ class CheckoutView(APIView):
                 "amount": order.total_amount,
             },
         )
+        # A retry that adds a coupon after a Payment row already exists must
+        # charge the discounted total, not the amount frozen on first attempt.
+        if not created and payment.amount != order.total_amount:
+            payment.amount = order.total_amount
+            payment.save(update_fields=["amount"])
         if not created and payment.status == Payment.STATUS_SUCCESS:
             return Response({"detail": "Order is already paid."}, status=status.HTTP_409_CONFLICT)
         if not created and payment.status == Payment.STATUS_FLAGGED:
@@ -250,6 +288,8 @@ class CheckoutView(APIView):
                 "access_code": result["access_code"],
                 "reference": payment.reference,
                 "order_id": order.id,
+                "amount": str(order.total_amount),
+                "discount_amount": str(discount),
             }
         )
 

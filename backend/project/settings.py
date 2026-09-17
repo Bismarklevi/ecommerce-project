@@ -284,6 +284,10 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Paystack — dominant Ghanaian payment processor (cards + Mobile Money via Paystack Charge API)
+# Google sign-in. The OAuth *client ID* only -- ID-token verification needs no
+# secret. Blank disables the endpoint (503) and the frontend button.
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+
 PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", default="")
 PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY", default="")
 PAYSTACK_BASE_URL = "https://api.paystack.co"

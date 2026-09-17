@@ -59,7 +59,10 @@ class Coupon(models.Model):
         if self.max_discount_amount is not None:
             discount = min(discount, self.max_discount_amount)
 
-        return min(discount, order_subtotal)
+        # Percentage maths yields 4dp (100.00 * 0.10 == 10.0000); this is a
+        # currency amount and everything downstream -- the redemption row, the
+        # order total, the API string -- is 2dp.
+        return min(discount, order_subtotal).quantize(Decimal("0.01"))
 
     def validate_for(self, *, user, order_subtotal: Decimal):
         """Raises ValidationError with a user-facing reason, or returns silently if valid."""

@@ -10,6 +10,8 @@ from .serializers import (
     ProductListSerializer,
     ReviewSerializer,
 )
+from django.db.models import Prefetch
+from .models import variants_in_size_order
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -37,7 +39,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         return (
             Product.objects.filter(is_active=True)
             .select_related("category")
-            .prefetch_related("images", "variants", "reviews__user")
+            .prefetch_related("images", Prefetch("variants", queryset=variants_in_size_order()), "reviews__user")
             .annotate(review_count=Count("reviews"), average_rating=Avg("reviews__rating"))
             .order_by("name")
         )

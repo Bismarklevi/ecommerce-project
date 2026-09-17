@@ -11,6 +11,9 @@ class ReturnRequestViewSet(viewsets.ModelViewSet):
     through the same reviewed workflow as other fulfillment actions."""
 
     serializer_class = ReturnRequestSerializer
+    # Never served (get_queryset scopes to the user); present so schema
+    # generation can type the {id} path parameter instead of guessing "string".
+    queryset = ReturnRequest.objects.none()
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ["get", "post", "head", "options"]  # no client-side status edits
 

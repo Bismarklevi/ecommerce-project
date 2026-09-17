@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import Banner, ContentBlock
@@ -10,6 +11,7 @@ class BannerSerializer(serializers.ModelSerializer):
         model = Banner
         fields = ["id", "title", "subtitle", "image", "link_url", "position"]
 
+    @extend_schema_field(serializers.URLField(allow_blank=True))
     def get_image(self, obj):
         request = self.context.get("request")
         url = obj.image.url if obj.image else ""
