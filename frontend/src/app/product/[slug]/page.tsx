@@ -65,9 +65,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         <div className="md:pt-8">
           <p className="section-eyebrow mb-3">{product.category.name}</p>
-          <h1 className="text-4xl font-extrabold uppercase leading-tight sm:text-5xl">
-            {product.name}
-          </h1>
+          <h1 className="text-4xl leading-tight sm:text-5xl">{product.name}</h1>
 
           <div className="mt-6 flex items-baseline gap-3 text-xl font-bold">
             {onSale && (
@@ -100,7 +98,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </div>
 
       {related.length > 0 && (
-        <section className="mx-auto max-w-7xl border-t border-hairline px-4 py-16 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-7xl border-t border-hairline px-4 py-12 sm:px-6 lg:px-8">
           <div className="mb-10 text-center">
             <h2 className="section-title">You may also like</h2>
           </div>

@@ -3,6 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { Cart } from "./types";
 
+// productId -> wishlist row id, or null once we know it is NOT saved. The null
+// matters: a product absent from the map is "unknown", a null is "checked and
+// unsaved", and callers with their own initial state fall back only on unknown.
+type SavedMap = Record<number, number | null>;
+
 interface CartContextValue {
   cart: Cart | null;
   loading: boolean;
@@ -16,6 +21,8 @@ interface CartContextValue {
   ) => Promise<{ ok: true } | { ok: false; detail: string }>;
   updateQuantity: (itemId: number, quantity: number) => Promise<void>;
   removeItem: (itemId: number) => Promise<void>;
+  savedIds: SavedMap;
+  setSavedId: (productId: number, wishlistId: number | null) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -24,19 +31,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  const [savedIds, setSavedIds] = useState<SavedMap>({});
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/cart");
-      if (response.status === 401) {
+      const data = await response.json().catch(() => null);
+      // The proxy answers 200 {signed_in:false} for a visitor with no session,
+      // so an ordinary page view no longer logs a 401 in the console. A real
+      // 401 still means the same thing (a stale token the proxy just cleared).
+      if (response.status === 401 || data?.signed_in === false) {
         setSignedIn(false);
         setCart(null);
+        setSavedIds({});
         return;
       }
       if (response.ok) {
         setSignedIn(true);
-        setCart(await response.json());
+        setCart(data);
       }
     } finally {
       setLoading(false);
@@ -47,6 +60,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
+
+  // One wishlist fetch per session, so every ProductCard on every page can
+  // render its heart in the right state instead of always starting unsaved.
+  useEffect(() => {
+    if (signedIn !== true) return;
+    let cancelled = false;
+    fetch("/api/wishlist")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((items: { id: number; product: number }[]) => {
+        if (cancelled) return;
+        const map: SavedMap = {};
+        for (const item of items) map[item.product] = item.id;
+        setSavedIds(map);
+      })
+      .catch(() => {
+        // Non-fatal: hearts just stay in their fallback state.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn]);
+
+  const setSavedId = useCallback((productId: number, wishlistId: number | null) => {
+    setSavedIds((prev) => ({ ...prev, [productId]: wishlistId }));
+  }, []);
 
   const addItem = useCallback(async (variantId: number, quantity = 1) => {
     const response = await fetch("/api/cart", {
@@ -85,7 +123,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ cart, loading, signedIn, count, refresh, addItem, updateQuantity, removeItem }}
+      value={{
+        cart,
+        loading,
+        signedIn,
+        count,
+        refresh,
+        addItem,
+        updateQuantity,
+        removeItem,
+        savedIds,
+        setSavedId,
+      }}
     >
       {children}
     </CartContext.Provider>

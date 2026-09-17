@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
+import PasswordField from "@/components/PasswordField";
 
 export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
@@ -106,32 +108,34 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
           </div>
         )}
 
-        <div>
-          <label
-            htmlFor="password"
-            className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
-          >
-            Password
-          </label>
-          <input id="password" name="password" type="password" required className="field-input" />
-        </div>
+        <PasswordField
+          id="password"
+          name="password"
+          label="Password"
+          /* Tells a password manager whether to offer a saved password or a
+             generated one -- the wrong value here is why managers sometimes
+             try to save a new password over an existing entry. */
+          autoComplete={mode === "login" ? "current-password" : "new-password"}
+        />
 
         {mode === "register" && (
-          <div>
-            <label
-              htmlFor="password_confirm"
-              className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+          <PasswordField
+            id="password_confirm"
+            name="password_confirm"
+            label="Confirm password"
+            autoComplete="new-password"
+          />
+        )}
+
+        {mode === "login" && (
+          <p className="-mt-2 text-right text-xs">
+            <Link
+              href="/forgot-password"
+              className="focus-ring text-muted underline underline-offset-4 hover:text-wine"
             >
-              Confirm password
-            </label>
-            <input
-              id="password_confirm"
-              name="password_confirm"
-              type="password"
-              required
-              className="field-input"
-            />
-          </div>
+              Forgot password?
+            </Link>
+          </p>
         )}
 
         {error && (
@@ -146,6 +150,8 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
           {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
         </button>
       </form>
+
+      <GoogleSignInButton mode={mode} redirectTo={redirectTo} onError={setError} />
 
       <p className="mt-6 text-sm text-muted">
         <Link

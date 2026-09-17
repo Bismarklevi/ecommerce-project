@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/currency";
+import { Skeleton, SkeletonScreen } from "@/components/Skeleton";
 import type { Order } from "@/lib/types";
 
 function StatusBanner({ paymentStatus }: { paymentStatus: string }) {
@@ -26,7 +27,7 @@ function StatusBanner({ paymentStatus }: { paymentStatus: string }) {
     );
   }
   return (
-    <div className="border border-hairline bg-bone-2 p-6">
+    <div className="border border-hairline p-6">
       <p className="mb-1 text-xl font-extrabold uppercase">Confirming your payment...</p>
       <p className="text-sm text-muted">
         This usually takes just a few seconds -- this page will update automatically.
@@ -94,7 +95,7 @@ function CheckoutSuccessContent() {
 
   if (!orderId) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <h1 className="section-title mb-6">We could not find that order</h1>
         <Link href="/account" className="site-btn focus-ring">
           View your orders
@@ -105,15 +106,23 @@ function CheckoutSuccessContent() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">
-        Loading...
-      </div>
+      <SkeletonScreen className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="mb-8 mt-3 h-9 w-72" />
+        <Skeleton className="h-20 w-full" />
+        <div className="mt-8 space-y-4 border-t border-hairline pt-8">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-4 w-full" />
+          ))}
+          <Skeleton className="h-6 w-40" />
+        </div>
+      </SkeletonScreen>
     );
   }
 
   if (notFound || !order) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <h1 className="section-title mb-6">We could not find that order</h1>
         <Link href="/account" className="site-btn focus-ring">
           View your orders
@@ -123,7 +132,7 @@ function CheckoutSuccessContent() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <p className="section-eyebrow mb-3">Order #{order.id}</p>
       <h1 className="section-title mb-8">Order confirmation</h1>
 
@@ -160,9 +169,17 @@ export default function CheckoutSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-2xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">
-          Loading...
-        </div>
+        <SkeletonScreen className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="mb-8 mt-3 h-9 w-72" />
+          <Skeleton className="h-20 w-full" />
+          <div className="mt-8 space-y-4 border-t border-hairline pt-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+            <Skeleton className="h-6 w-40" />
+          </div>
+        </SkeletonScreen>
       }
     >
       <CheckoutSuccessContent />

@@ -1,19 +1,37 @@
 import type { Metadata } from "next";
-import { Raleway } from "next/font/google";
-import Script from "next/script";
+import { Google_Sans, Lilita_One } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ScrollReveal from "@/components/ScrollReveal";
 
-// Previously the design just *referenced* "Raleway" as a bare font-family
-// name (a CSS variable fallback list with no actual loading mechanism --
-// no next/font, no <link>), so every visitor's browser silently fell back
-// to a system font instead. This actually loads it.
-const raleway = Raleway({
-  variable: "--font-plaza",
+// Two families, strictly divided (see globals.css): a heavy display face for
+// every heading, Google Sans for body copy and UI. Lilita One ships a single
+// weight (400) -- headings must not ask for 500/600, there is nothing to
+// synthesise from, and the browser would fake-bold the glyphs.
+const lilitaOne = Lilita_One({
+  variable: "--font-display-face",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400"],
+  display: "swap",
+});
+
+// Body text. Loaded through next/font rather than the <link> tags from
+// fonts.googleapis.com: next/font self-hosts the files from this origin, so
+// there is no render-blocking stylesheet request, no preconnect needed, and no
+// layout shift when the face arrives.
+const googleSans = Google_Sans({
+  variable: "--font-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  // Next ships no fallback metrics for this family ("Failed to find font
+  // override values" at build time), so it cannot auto-generate a
+  // size-adjusted fallback face. Naming the chain explicitly at least keeps
+  // the pre-swap render on a close neighbour instead of Times.
+  fallback: ["Roboto", "Helvetica Neue", "Arial", "sans-serif"],
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -47,40 +65,24 @@ export const metadata: Metadata = {
 // no flash of the wrong theme. Runs as an inline script (not a React
 // effect) specifically because effects run after paint -- too late to
 // prevent the flash this exists to avoid.
-const themeInitScript = `
-(function () {
-  try {
-    var stored = localStorage.getItem("kaira-theme");
-    var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    if (theme === "dark") document.documentElement.classList.add("dark");
-  } catch (e) {}
-})();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={raleway.variable} suppressHydrationWarning>
-      <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {themeInitScript}
-        </Script>
-      </head>
+    <html lang="en" className={`${lilitaOne.variable} ${googleSans.variable}`}>
       <body className="antialiased">
         <CartProvider>
           <a
             href="#main"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:bg-ink focus:text-bone focus:px-4 focus:py-2 focus:text-sm"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:text-bone"
           >
             Skip to content
           </a>
           <SiteHeader />
-          <main id="main" className="lg:pl-64">
-            {children}
-          </main>
+          <ScrollReveal />
+          <main id="main">{children}</main>
           <SiteFooter />
         </CartProvider>
       </body>

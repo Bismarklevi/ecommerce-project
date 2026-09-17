@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getCategories, getProducts } from "@/lib/api";
 import { Category, Product } from "@/lib/types";
 import ProductCard from "@/components/ProductCard";
+import { ProductGridSkeleton, SkeletonScreen } from "@/components/Skeleton";
 
 type SortValue = "featured" | "price-asc" | "price-desc" | "new";
 
@@ -25,7 +26,14 @@ export default function ShopClient() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    Promise.all([getProducts({ category: activeCategory, sort: activeSort, search: activeSearch || undefined }), getCategories()])
+    Promise.all([
+      getProducts({
+        category: activeCategory,
+        sort: activeSort,
+        search: activeSearch || undefined,
+      }),
+      getCategories(),
+    ])
       .then(([p, c]) => {
         if (cancelled) return;
         setProducts(p);
@@ -57,7 +65,7 @@ export default function ShopClient() {
 
   return (
     <div>
-      <section className="border-b border-hairline bg-bone-2 px-4 py-14 sm:px-6 lg:px-8">
+      <section className="border-b border-hairline px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <p className="section-eyebrow mb-3">Full collection</p>
           <h1 className="section-title">Shop</h1>
@@ -67,7 +75,8 @@ export default function ShopClient() {
           </p>
           {activeSearch && (
             <p className="mt-4 text-sm text-muted">
-              Showing results for <span className="font-bold text-ink">&ldquo;{activeSearch}&rdquo;</span>
+              Showing results for{" "}
+              <span className="font-bold text-ink">&ldquo;{activeSearch}&rdquo;</span>
               {" - "}
               <button
                 type="button"
@@ -81,7 +90,7 @@ export default function ShopClient() {
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[15rem_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[15rem_1fr] lg:px-8">
         <aside className="lg:sticky lg:top-8 lg:self-start">
           <div className="border-b border-hairline pb-6 lg:border-b-0 lg:border-r lg:pr-8">
             <p className="mb-5 text-xs font-bold uppercase tracking-[0.18em] text-ink">
@@ -163,25 +172,17 @@ export default function ShopClient() {
           </div>
 
           {error ? (
-            <div className="border border-wine/40 bg-wine/5 py-16 text-center px-6">
-              <p className="text-xl font-extrabold uppercase text-wine">
-                Couldn&apos;t load products
-              </p>
+            <div className="border border-wine/40 bg-wine/5 py-12 text-center px-6">
+              <p className="text-xl font-medium text-wine">Couldn&apos;t load products</p>
               <p className="mt-3 text-sm text-muted">{error}</p>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="aspect-[3/4] bg-bone-2" />
-                  <div className="mx-auto mt-5 h-4 w-3/4 bg-bone-2" />
-                  <div className="mx-auto mt-3 h-3 w-1/2 bg-bone-2" />
-                </div>
-              ))}
-            </div>
+            <SkeletonScreen>
+              <ProductGridSkeleton />
+            </SkeletonScreen>
           ) : products.length === 0 ? (
-            <div className="border border-hairline py-24 text-center">
-              <p className="text-xl font-extrabold uppercase">
+            <div className="border border-hairline py-16 text-center">
+              <p className="text-xl font-medium">
                 {activeSearch ? `Nothing matched "${activeSearch}"` : "Nothing here yet"}
               </p>
               <p className="mt-3 text-sm text-muted">
@@ -191,7 +192,7 @@ export default function ShopClient() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

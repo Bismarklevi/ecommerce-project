@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
+import { Skeleton, SkeletonScreen } from "@/components/Skeleton";
 import { formatPrice } from "@/lib/currency";
 
 export default function CheckoutPage() {
@@ -11,6 +12,10 @@ export default function CheckoutPage() {
   const { cart, loading, signedIn } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discount: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
 
   useEffect(() => {
     if (signedIn === false) router.replace("/login?next=/checkout");
@@ -18,16 +23,23 @@ export default function CheckoutPage() {
 
   if (loading || signedIn === undefined) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-muted sm:px-6 lg:px-8">
-        Loading...
-      </div>
+      <SkeletonScreen className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+        <Skeleton className="mb-8 h-9 w-56" />
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+        <Skeleton className="mt-8 h-40 w-full" />
+        <Skeleton className="mt-8 h-14 w-full rounded-full" />
+      </SkeletonScreen>
     );
   }
 
   const items = cart?.items ?? [];
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <h1 className="section-title mb-6">Your bag is empty</h1>
         <Link href="/shop" className="site-btn focus-ring">
           Shop the edit
@@ -70,7 +82,11 @@ export default function CheckoutPage() {
         return;
       }
 
-      const checkoutResponse = await fetch(`/api/orders/${order.id}/checkout`, { method: "POST" });
+      const checkoutResponse = await fetch(`/api/orders/${order.id}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(promo ? { coupon_code: promo.code } : {}),
+      });
       const checkout = await checkoutResponse.json();
       if (!checkoutResponse.ok) {
         setError(checkout.detail || "Could not start payment. Your order was saved as pending.");
@@ -86,9 +102,39 @@ export default function CheckoutPage() {
   }
 
   const subtotal = Number(cart?.subtotal ?? 0);
+  const total = Math.max(0, subtotal - (promo?.discount ?? 0));
+
+  async function applyPromo() {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoBusy(true);
+    setPromoError(null);
+    try {
+      const response = await fetch("/api/promotions/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, order_subtotal: subtotal.toFixed(2) }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setPromo(null);
+        setPromoError(
+          typeof data === "object" && data
+            ? Object.values(data).flat().join(" ")
+            : "That code didn't work.",
+        );
+        return;
+      }
+      setPromo({ code: data.code, discount: Number(data.discount_amount) });
+    } catch {
+      setPromoError("Could not check that code. Please try again.");
+    } finally {
+      setPromoBusy(false);
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <p className="section-eyebrow mb-3">Checkout</p>
       <h1 className="section-title mb-8">Delivery details</h1>
 
@@ -162,9 +208,64 @@ export default function CheckoutPage() {
                 </li>
               ))}
             </ul>
-            <div className="flex justify-between border-t border-hairline pt-6 text-lg font-extrabold uppercase">
+            {/* Promo code. Applying only previews the discount; the code is
+                redeemed by the checkout call itself, so nothing is consumed if
+                the shopper stops here. */}
+            <div className="mb-6 border-t border-hairline pt-6">
+              <label
+                htmlFor="promo"
+                className="mb-2 block text-xs font-bold uppercase tracking-[0.15em] text-muted"
+              >
+                Promo code
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="promo"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value)}
+                  disabled={Boolean(promo)}
+                  className="field-input min-w-0 flex-1 uppercase disabled:opacity-60"
+                />
+                {promo ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPromo(null);
+                      setPromoInput("");
+                    }}
+                    className="site-btn-outline focus-ring shrink-0"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={applyPromo}
+                    disabled={promoBusy || !promoInput.trim()}
+                    className="site-btn focus-ring shrink-0 disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    {promoBusy ? "..." : "Apply"}
+                  </button>
+                )}
+              </div>
+              {promoError && <p className="mt-2 text-xs text-wine">{promoError}</p>}
+            </div>
+
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted">Subtotal</dt>
+                <dd>{formatPrice(subtotal)}</dd>
+              </div>
+              {promo && (
+                <div className="flex justify-between text-wine">
+                  <dt>Promo {promo.code}</dt>
+                  <dd>-{formatPrice(promo.discount)}</dd>
+                </div>
+              )}
+            </dl>
+            <div className="mt-4 flex justify-between border-t border-hairline pt-6 text-lg font-extrabold uppercase">
               <span>Total</span>
-              <span>{formatPrice(subtotal)}</span>
+              <span>{formatPrice(total)}</span>
             </div>
           </div>
         </aside>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/currency";
 import { PLACEHOLDER_IMAGE, normalizeImageUrl } from "@/lib/constants";
+import { Skeleton, SkeletonScreen } from "@/components/Skeleton";
 
 const FREE_SHIPPING_THRESHOLD = 500;
 
@@ -13,19 +14,22 @@ export default function CartPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-bone-2" />
-          <div className="h-24 bg-bone-2" />
-          <div className="h-24 bg-bone-2" />
+      <SkeletonScreen className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="mb-8 mt-3 h-9 w-48" />
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full" />
+          ))}
         </div>
-      </div>
+        <Skeleton className="mt-10 h-40 w-full" />
+      </SkeletonScreen>
     );
   }
 
   if (signedIn === false) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <p className="section-eyebrow mb-3">Your bag</p>
         <h1 className="section-title">Sign in to see your bag</h1>
         <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-muted">
@@ -43,7 +47,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <p className="section-eyebrow mb-3">Your bag</p>
         <h1 className="section-title">Your cart is empty</h1>
         <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-muted">
@@ -59,14 +63,14 @@ export default function CartPage() {
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <p className="section-eyebrow mb-3">
         {items.length} item{items.length === 1 ? "" : "s"}
       </p>
       <h1 className="section-title mb-8">Shopping cart</h1>
 
       {remaining > 0 ? (
-        <div className="mb-8 border border-hairline bg-bone-2 px-5 py-4 text-sm text-muted">
+        <div className="mb-8 border border-hairline px-5 py-4 text-sm text-muted">
           Add <span className="font-bold text-ink">{formatPrice(remaining)}</span> more for free
           shipping.
         </div>

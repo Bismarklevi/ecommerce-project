@@ -1,36 +1,39 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Palette: warm cream + deep aubergine, with butter-yellow and forest-green
+   accents. Token NAMES are inherited from the previous design (ink/bone/wine/
+   sage) and deliberately kept -- they're referenced ~200 times across the app,
+   so restyling by re-valuing them changes every page at once instead of
+   touching every call site. Read them by role, not by the colour their name
+   suggests: `wine` is the accent, `sage` is the badge fill.
+   Every pair below was contrast-checked against WCAG AA (4.5:1 normal text,
+   3:1 large) -- computed, not guessed. See the ratios noted per token.
+   Light only: the dark theme was removed, so these are the only values.
+--------------------------------------------------------------------------- */
 :root {
-  --ink: #414141;
-  --bone: #ffffff;
-  --bone-2: #f2f4f9;
-  /* Darkened from the original #b09d81 -- that value was 2.63:1 contrast on
-     white (used for prices via text-wine), well under WCAG AA's 4.5:1 for
-     normal text. This passes at 5.61:1, computed, not guessed. */
-  --wine: #7a6448;
-  --wine-dark: #5f4d37;
-  --sage: #fbb710;
-  --hairline: #ebebeb;
-  --muted: #6b6b6b;
-  /* Mode-invariant: text sitting on a sage badge (ProductCard's New/Sale
-     tag, the header's cart count) needs to stay legible regardless of
-     theme -- if it used the flipping `ink` token, dark mode would put
-     near-white text on bright gold at 1.5:1 contrast. Same value in both
-     :root and .dark below, deliberately never overridden. */
-  --on-accent: #2a2318;
+  --ink: #3e012f; /* aubergine. 16.9:1 on --bone */
+  --bone: #ffffff; /* page ground */
+  --bone-2: #fcefd5; /* deeper cream, for banded sections */
+  --wine: #00574e; /* forest green accent. 8.5:1 on --bone */
+  --wine-dark: #003f38; /* accent hover */
+  --sage: #fae5b9; /* butter badge/pill fill */
+  --hairline: #ebdfd2;
+  --muted: #6b5560; /* 6.8:1 on --bone */
+  /* Text on a butter badge. 12.4:1. */
+  --on-accent: #3e012f;
+  /* Price red, used where a price is the card's loudest element. 5.9:1 on
+     white -- a lighter, prettier red fails AA at this text size. */
+  --price: #c62828;
+  /* Highlight block behind a single heading word -- the same fill the nav
+     search input uses (bg-bone-2/50 in SiteHeader), so the two read as one
+     material. Kept as a token pair rather than repeating the color-mix, and
+     both halves track the theme because --bone-2 and --ink already do. */
+  --block: color-mix(in srgb, var(--bone-2) 50%, transparent);
+  --block-text: var(--ink);
+  --radius: 12px;
+  --radius-sm: 8px;
   color-scheme: light;
-}
-
-.dark {
-  --ink: #f1ede4;
-  --bone: #17140f;
-  --bone-2: #211d16;
-  --wine: #d8bd96;
-  --wine-dark: #c2a276;
-  --sage: #fbb710;
-  --hairline: #332d22;
-  --muted: #a39c8e;
-  color-scheme: dark;
 }
 
 @theme inline {
@@ -43,9 +46,13 @@
   --color-hairline: var(--hairline);
   --color-muted: var(--muted);
   --color-on-accent: var(--on-accent);
-  --font-display: var(--font-plaza);
-  --font-sans: var(--font-plaza);
-  --font-mono: var(--font-plaza);
+  --color-price: var(--price);
+  --radius-card: var(--radius);
+  /* Two families, strictly divided: the display face carries every heading,
+     Google Sans carries body copy and UI. Never mix the two roles. */
+  --font-display: var(--font-display-face);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-body);
 }
 
 * {
@@ -59,11 +66,154 @@ html {
 body {
   background: var(--bone);
   color: var(--ink);
-  font-family: var(--font-plaza), Raleway, "Avenir Next", "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-body), sans-serif;
   letter-spacing: 0;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display-face), "Lilita One", Impact, sans-serif;
+}
+
+/* ------------------------------ look carousel ---------------------------- */
+
+/* Panel widths live here rather than in arbitrary Tailwind classes: those are
+   emitted verbatim, and neither "calc(25%-8px)" nor Tailwind's underscore form
+   "calc(25%_-_8px)" is valid CSS, so the declaration was dropped and every
+   panel collapsed to the same width.
+   Three panels fill the track exactly, the wide one at twice the others:
+   4w + 2*16px gap = 100%, so w = 25% - 8px. */
+.look-panel {
+  width: 13rem;
+}
+
+.look-panel--active {
+  width: 19rem;
+}
+
+@media (min-width: 640px) {
+  .look-panel {
+    width: calc(25% - 8px);
+  }
+
+  .look-panel--active {
+    width: calc(50% - 16px);
+  }
+}
+
+/* Same defect, same fix: three product cards across at lg with a 2rem gutter. */
+@media (min-width: 1024px) {
+  .edit-slide {
+    width: calc((100% - 4rem) / 3);
+  }
+}
+
+/* ------------------------------- scroll reveal --------------------------- */
+
+/* Scoped to .reveal-ready, which ScrollReveal puts on <html> once it is
+   running. Without that guard a failed bundle would leave the whole page
+   permanently invisible; with it, no JS simply means no animation. */
+.reveal-ready .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* Siblings inside a [data-reveal-children] group each get their own delay
+     from ScrollReveal, so a grid deals itself out instead of landing flat. */
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.reveal-ready .reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-ready .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ------------------------------ hero entrance ---------------------------- */
+
+/* The hero is above the fold, so ScrollReveal reveals it instantly -- there is
+   no scroll to trigger on. These run on load instead, as plain CSS animations
+   on server-rendered markup: nothing to hydrate, nothing to wait for.
+
+   Everything is inside a no-preference query rather than being undone in a
+   reduce query, so the resting state IS the visible state. A stylesheet that
+   half-loads, or a browser that does not know these keyframes, leaves the
+   heading readable rather than stuck at opacity 0. */
+
+.hero-word {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-word {
+    animation: hero-word-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    /* Each word carries its own inline animation-delay (see HeroHeadline), so
+       they arrive in reading order rather than all at once. */
+  }
+
+  /* The pieces sitting on the artwork come in after the headline has had its
+     moment. Delay is per-element via --rise-delay. */
+  .hero-rise {
+    animation: hero-rise 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--rise-delay, 0ms);
+  }
+
+  /* Opacity only. `both` fill means an animated transform sticks after the
+     animation ends, which would flatten a resting tilt and swallow any
+     transform-based hover -- so anything already carrying a transform (the
+     rotated sticker) fades rather than rises. */
+  .hero-fade {
+    animation: hero-fade 760ms ease-out both;
+    animation-delay: var(--rise-delay, 0ms);
+  }
+}
+
+@keyframes hero-word-rise {
+  from {
+    opacity: 0;
+    /* em, not px: the travel scales with the clamped display size, so it reads
+       the same on a phone as it does at 3.5rem on a desktop. */
+    transform: translateY(0.45em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -88,12 +238,15 @@ body {
   outline-offset: 3px;
 }
 
+/* --------------------------------- buttons ------------------------------- */
+
 .site-btn,
 .site-btn-outline {
   display: inline-flex;
   min-height: 3.25rem;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-sm);
   padding: 0.95rem 1.75rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -107,14 +260,16 @@ body {
 }
 
 .site-btn {
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--bone);
+  border: 1px solid var(--wine);
+  background: var(--wine);
+  /* Not --bone: that is the page ground, and the button sits ON the page.
+     Pinned to the off-white the design uses for type on the accent. */
+  color: #fefaf1;
 }
 
 .site-btn:hover {
-  border-color: var(--wine);
-  background: var(--wine);
+  border-color: var(--wine-dark);
+  background: var(--wine-dark);
 }
 
 .site-btn-outline {
@@ -125,29 +280,148 @@ body {
 
 .site-btn-outline:hover {
   border-color: var(--wine);
-  background: var(--wine);
-  color: var(--bone);
+  color: var(--wine);
 }
 
-.section-eyebrow {
-  color: var(--wine);
+/* Small butter pill used for the header's primary action. */
+.site-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--sage);
+  padding: 0.7rem 1.4rem;
+  color: var(--on-accent);
   font-size: 0.72rem;
   font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: filter 180ms ease;
+}
+
+.site-pill:hover {
+  filter: brightness(0.94);
+}
+
+/* -------------------------------- headings ------------------------------- */
+
+.section-eyebrow {
+  color: var(--muted);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
+/* Large, tight, and NOT bold -- weight comes from the slab typeface itself,
+   not from bolding it. Sentence case, never uppercase. */
 .section-title {
   color: var(--ink);
-  font-size: clamp(1.85rem, 3.5vw, 3.25rem);
-  font-weight: 800;
-  line-height: 0.95;
-  text-transform: uppercase;
+  font-family: var(--font-display-face), "Lilita One", Impact, sans-serif;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.08;
+  text-transform: none;
+}
+
+/* For a title on the inverted aubergine band. Needed as a real class because
+   .section-title's `color` is unlayered CSS and so beats any Tailwind text-*
+   utility on the element, whatever the specificity or source order.
+   --bone, not white: it is #ffffff in light mode, and in dark mode the band
+   itself turns cream, so the text has to darken with it to stay readable. */
+.section-title--invert {
+  color: var(--bone);
+}
+
+.display-title {
+  color: var(--ink);
+  font-family: var(--font-display-face), "Lilita One", Impact, sans-serif;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.06;
+}
+
+/* One word of a heading set in a solid green block. box-decoration-break: clone
+   keeps the box whole if the word ever lands across a wrap -- without it a
+   broken span gets ONE background with padding only at the outer ends.
+   The fill is the nav search input's, so the block reads as the same material
+   as the rest of the chrome rather than a second accent. It is translucent, so
+   it tints whatever sits behind it instead of punching a hole in the page.
+   The block needs room, so a title carrying one loosens its leading -- at
+   .display-title's 1.06 the padding would collide with the line above. */
+.display-title:has(.text-block) {
+  line-height: 1.35;
+}
+
+.text-block {
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  background: var(--block);
+  color: var(--block-text);
+  padding: 0.06em 0.26em;
+}
+
+/* The signature move: one word of a heading rendered hollow (stroked, not
+   filled) while the rest stays solid. currentColor keeps it correct in both
+   themes and on the inverted aubergine band. */
+.display-outline {
+  /* Hollow the glyphs with text-FILL-color, never `color: transparent` --
+     the stroke below is currentColor, so zeroing `color` makes the stroke
+     transparent too and the word disappears entirely. Keeping `color`
+     intact is what gives the stroke something to paint. */
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px currentColor;
+}
+
+/* Where text-stroke isn't supported the word would render as invisible
+   fill, so put the fill back and lean on weight for the contrast instead. */
+@supports not (-webkit-text-stroke: 1px currentColor) {
+  .display-outline {
+    -webkit-text-fill-color: currentColor;
+    opacity: 0.55;
+  }
+}
+
+/* Small hollow ring used as terminal punctuation: Handpicked○ Sustainable○ */
+.dot-mark {
+  display: inline-block;
+  width: 0.28em;
+  height: 0.28em;
+  border: 0.06em solid currentColor;
+  border-radius: 999px;
+  margin-left: 0.12em;
+  vertical-align: 0.42em;
+}
+
+/* --------------------------------- surfaces ------------------------------ */
+
+.surface-card {
+  border-radius: var(--radius);
+  background: var(--bone);
+  overflow: hidden;
+}
+
+.count-chip {
+  display: inline-flex;
+  min-width: 1.85rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--sage);
+  padding: 0.2rem 0.5rem;
+  color: var(--on-accent);
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .field-input {
   width: 100%;
   border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
   background: var(--bone);
   padding: 0.85rem 1rem;
   color: var(--ink);
@@ -161,4 +435,162 @@ body {
 
 .plaza-rule {
   border-color: var(--hairline);
+}
+
+/* Carousel track: the arrows are the affordance, so the native bar is hidden --
+   scrolling itself (touch, trackpad, keyboard) is deliberately left intact. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ------------------------------ glass header ----------------------------- */
+
+/* Frosted-glass bar. Only applied once the page is scrolled -- at the very top
+   there is nothing behind the header to refract, so the blur would cost a
+   compositing layer to show a plain block of colour. */
+.glass-header {
+  /* color-mix keeps this tied to the theme token, so the glass is cream in
+     light mode and aubergine in dark without a second hard-coded value. */
+  background: color-mix(in srgb, var(--bone) 68%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  box-shadow: 0 10px 30px -22px color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* Without backdrop-filter the bar would be a flat 62%-opaque wash with page
+   content legible straight through it -- so fall back to the solid ground. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-header {
+    background: var(--bone);
+  }
+}
+
+.glass-header-top {
+  background: var(--bone);
+  border-bottom: 1px solid transparent;
+}
+
+/* Green-tinted drop shadow for the carousel arrows and the section CTA. Built
+   from --wine via color-mix so it follows the accent in both themes (forest
+   green in light, mint in dark) instead of pinning one rgba value. */
+.shadow-accent {
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--wine) 70%, transparent);
+  transition: box-shadow 200ms ease;
+}
+
+.shadow-accent:hover {
+  box-shadow: 0 16px 30px -12px color-mix(in srgb, var(--wine) 85%, transparent);
+}
+
+/* A disabled arrow should not look like it is lifting off the page. */
+.shadow-accent:disabled,
+.shadow-accent:disabled:hover {
+  box-shadow: none;
+}
+
+/* ----------------------------- hard-edged pill ---------------------------- */
+
+/* Thick outline + solid offset shadow (no blur), with a filled circular badge
+   carrying the arrow. The shadow is a hard block of colour, never a soft tint
+   -- blurring it turns this back into an ordinary raised button.
+
+   Shadow colour follows the fill: a light/white button casts the green accent,
+   and a button already filled with the accent falls back to --ink (see
+   .btn-hard--onaccent) so the shadow doesn't vanish into its own button. */
+.btn-hard {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--bone);
+  padding: 0.5rem 0.55rem 0.5rem 1.6rem;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 5px 5px 0 0 var(--wine);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+/* Press-in: the button slides toward its shadow, so the two meet on click. */
+.btn-hard:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 0 var(--wine);
+}
+
+.btn-hard:active {
+  transform: translate(5px, 5px);
+  box-shadow: 0 0 0 0 var(--wine);
+}
+
+/* For a button whose own fill is the green accent, the shadow flips to --ink so
+   it stays visible instead of disappearing into the button. */
+.btn-hard--onaccent {
+  box-shadow: 5px 5px 0 0 var(--ink);
+}
+
+.btn-hard--onaccent:hover {
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+
+.btn-hard--onaccent:active {
+  box-shadow: 0 0 0 0 var(--ink);
+}
+
+.btn-hard__badge {
+  display: inline-flex;
+  height: 2.2rem;
+  width: 2.2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--sage);
+  color: var(--on-accent);
+}
+
+/* Icon-only variant for the carousel arrows. */
+.btn-hard-icon {
+  display: inline-flex;
+  height: 2.9rem;
+  width: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--bone);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 0 var(--wine);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.btn-hard-icon:hover:not(:disabled) {
+  transform: translate(2px, 2px);
+  background: var(--sage);
+  color: var(--on-accent);
+  box-shadow: 2px 2px 0 0 var(--wine);
+}
+
+.btn-hard-icon:active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 var(--wine);
+}
+
+/* A disabled arrow keeps its outline but drops the lift entirely. */
+.btn-hard-icon:disabled {
+  box-shadow: none;
+  opacity: 0.3;
+  cursor: not-allowed;
 }

@@ -2,20 +2,70 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import ThemeToggle from "./ThemeToggle";
 
 const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/shop", label: "Shop" },
+  { href: "/shop?sort=new", label: "New in" },
+  { href: "/shop", label: "Collections" },
+  { href: "/shop?sort=featured", label: "Featured" },
+  { href: "/saved", label: "Saved" },
+  { href: "/account", label: "Account" },
 ];
+
+function SearchIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function BagIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 7h12l1 13H5L6 7Z" />
+      <path d="M9 7V5.5a3 3 0 0 1 6 0V7" />
+    </svg>
+  );
+}
 
 export default function SiteHeader() {
   const { count, signedIn, refresh } = useCart();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+
+  // The glass only switches on once there is page behind the bar to refract.
+  // Read on mount as well as on scroll: a reload partway down the page, or a
+  // deep link to an anchor, starts already scrolled.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   function handleSearchSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -31,94 +81,106 @@ export default function SiteHeader() {
     router.refresh();
   }
 
-  const accountAction = signedIn ? (
-    <button
-      onClick={handleSignOut}
-      className="focus-ring text-left transition-colors hover:text-wine"
-    >
-      Sign out
-    </button>
-  ) : (
-    <Link href="/login" className="focus-ring transition-colors hover:text-wine">
-      Sign in
-    </Link>
-  );
-
   return (
-    <header className="z-50 border-hairline bg-bone lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:border-r">
-      <div className="flex h-16 items-center justify-between border-b border-hairline px-4 sm:px-6 lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:border-b-0 lg:px-8 lg:py-10">
-        <div className="flex items-center justify-between lg:block">
+    <header
+      className={`sticky top-0 z-50 transition-[background-color,box-shadow,border-color] duration-300 ${
+        scrolled ? "glass-header" : "glass-header-top"
+      }`}
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8">
+        {/* Logo and nav sit together as one left-hand group, rather than the
+            links being centred -- that grouping is what makes the bar read as
+            compact and editorial instead of as a wide split menu. */}
+        <Link href="/" className="focus-ring font-display text-xl tracking-tight text-ink">
+          Kaira
+        </Link>
+
+        <nav className="hidden items-center gap-7 text-sm lg:flex">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className={`focus-ring transition-colors hover:text-ink ${scrolled ? "text-ink" : "text-muted"}`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          <form onSubmit={handleSearchSubmit} className="relative hidden md:block">
+            <label htmlFor="site-search" className="sr-only">
+              Search products
+            </label>
+            <input
+              id="site-search"
+              type="search"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Search"
+              className="h-10 w-52 rounded-full border border-hairline bg-bone-2/50 pl-4 pr-10 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
+            />
+            <button
+              type="submit"
+              aria-label="Search"
+              className="focus-ring absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted transition-colors hover:text-ink"
+            >
+              <SearchIcon />
+            </button>
+          </form>
+
+          {signedIn ? (
+            <button
+              onClick={handleSignOut}
+              className={`focus-ring hidden text-sm transition-colors hover:text-ink lg:block ${scrolled ? "text-ink" : "text-muted"}`}
+            >
+              Sign out
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className={`focus-ring hidden text-sm transition-colors hover:text-ink lg:block ${scrolled ? "text-ink" : "text-muted"}`}
+            >
+              Sign in
+            </Link>
+          )}
+
+          {/* Solid dark disc, the bar's one piece of heavy weight. The count
+              rides as a corner badge so the control stays a circle at any
+              basket size, and the label carries the number for screen readers
+              since the badge alone would read as a bare digit. */}
           <Link
-            href="/"
-            className="focus-ring inline-block text-3xl font-extrabold tracking-[0.08em] text-ink"
+            href="/cart"
+            aria-label={`Cart, ${count} item${count === 1 ? "" : "s"}`}
+            className="focus-ring relative flex h-10 w-10 items-center justify-center rounded-full bg-ink text-bone shadow-[3px_3px_0_0_var(--wine)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_0_var(--wine)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-[0_0_0_0_var(--wine)]"
           >
-            KAIRA
+            <BagIcon />
+            {count > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-sage px-1 text-[10px] font-semibold text-on-accent"
+              >
+                {count}
+              </span>
+            )}
           </Link>
+
           <button
             className="focus-ring -mr-2 p-2 lg:hidden"
             aria-label="Toggle menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
           >
-            <span className="block h-px w-6 bg-ink" />
-            <span className="mt-1.5 block h-px w-6 bg-ink" />
-            <span className="mt-1.5 block h-px w-6 bg-ink" />
+            <span className="block h-0.5 w-5 rounded bg-ink" />
+            <span className="mt-1.5 block h-0.5 w-5 rounded bg-ink" />
+            <span className="mt-1.5 block h-0.5 w-5 rounded bg-ink" />
           </button>
-        </div>
-
-        <nav className="mt-14 hidden flex-col gap-6 text-sm font-bold uppercase tracking-[0.12em] lg:flex">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="focus-ring transition-colors hover:text-wine"
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Link href="/account" className="focus-ring transition-colors hover:text-wine">
-            Account
-          </Link>
-        </nav>
-
-        <form onSubmit={handleSearchSubmit} className="mt-8 hidden lg:block">
-          <label htmlFor="site-search" className="sr-only">
-            Search products
-          </label>
-          <input
-            id="site-search"
-            type="search"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Search products..."
-            className="field-input text-sm"
-          />
-        </form>
-
-        <div className="mt-auto hidden space-y-5 text-sm font-semibold uppercase tracking-[0.1em] lg:block">
-          <div className="flex items-center justify-between border-b border-hairline pb-4">
-            <span className="text-xs tracking-[0.14em] text-muted">Theme</span>
-            <ThemeToggle />
-          </div>
-          <Link
-            href="/cart"
-            className="focus-ring flex items-center justify-between transition-colors hover:text-wine"
-          >
-            <span>Cart</span>
-            <span className="inline-flex h-7 min-w-7 items-center justify-center bg-sage px-2 text-xs text-on-accent">
-              {count}
-            </span>
-          </Link>
-          <Link href="/account" className="focus-ring block transition-colors hover:text-wine">
-            Account
-          </Link>
-          {accountAction}
         </div>
       </div>
 
       {menuOpen && (
-        <div className="border-b border-hairline bg-bone px-4 py-5 shadow-sm sm:px-6 lg:hidden">
-          <form onSubmit={handleSearchSubmit} className="mb-5">
+        <div className="border-t border-hairline bg-bone px-4 py-5 sm:px-6 lg:hidden">
+          <form onSubmit={handleSearchSubmit} className="relative mb-5">
             <label htmlFor="site-search-mobile" className="sr-only">
               Search products
             </label>
@@ -127,47 +189,46 @@ export default function SiteHeader() {
               type="search"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search products..."
-              className="field-input text-sm"
+              placeholder="Search"
+              className="h-11 w-full rounded-full border border-hairline bg-bone-2/50 pl-4 pr-11 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
             />
+            <button
+              type="submit"
+              aria-label="Search"
+              className="focus-ring absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted"
+            >
+              <SearchIcon />
+            </button>
           </form>
-          <nav className="flex flex-col gap-4 text-sm font-bold uppercase tracking-[0.12em]">
+          <nav className="flex flex-col gap-4 text-sm">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="focus-ring"
+                className="focus-ring text-ink"
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
-            <Link href="/account" className="focus-ring" onClick={() => setMenuOpen(false)}>
-              Account
-            </Link>
           </nav>
-          <div className="mt-5 flex items-center justify-between border-t border-hairline pt-5">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-              Theme
-            </span>
-            <ThemeToggle />
-          </div>
-          <div className="mt-5 flex items-center justify-between border-t border-hairline pt-5 text-sm font-semibold uppercase tracking-[0.1em]">
-            <Link href="/cart" className="focus-ring" onClick={() => setMenuOpen(false)}>
-              Cart ({count})
-            </Link>
+          <div className="mt-5 border-t border-hairline pt-5 text-sm">
             {signedIn ? (
               <button
                 onClick={() => {
                   setMenuOpen(false);
                   handleSignOut();
                 }}
-                className="focus-ring"
+                className="focus-ring text-ink"
               >
                 Sign out
               </button>
             ) : (
-              <Link href="/login" className="focus-ring" onClick={() => setMenuOpen(false)}>
+              <Link
+                href="/login"
+                className="focus-ring text-ink"
+                onClick={() => setMenuOpen(false)}
+              >
                 Sign in
               </Link>
             )}

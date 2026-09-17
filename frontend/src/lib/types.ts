@@ -35,6 +35,10 @@ export interface Product {
   in_stock: boolean;
   look_number: string;
   is_new: boolean;
+  /* Annotated by the backend list/detail queryset (Avg over reviews).
+     null when a product has no reviews yet -- callers must not render 0. */
+  average_rating: number | null;
+  review_count: number;
 }
 
 export interface User {

@@ -98,7 +98,7 @@ interface BackendProductVariant {
   stock_quantity: number;
 }
 
-interface BackendProduct {
+export interface BackendProduct {
   id: number;
   slug: string;
   name: string;
@@ -110,13 +110,15 @@ interface BackendProduct {
   variants: BackendProductVariant[];
   primary_image_url: string;
   is_featured: boolean;
+  average_rating: number | null;
+  review_count: number;
 }
 
 function mapCategory(raw: BackendCategory): Category {
   return { id: raw.id, slug: raw.slug, name: raw.name, image: normalizeImageUrl(raw.image || "") };
 }
 
-function mapProduct(raw: BackendProduct): Product {
+export function mapProduct(raw: BackendProduct): Product {
   const images =
     raw.images.length > 0
       ? raw.images.map((img) => ({
@@ -154,6 +156,10 @@ function mapProduct(raw: BackendProduct): Product {
     in_stock: raw.variants.some((v) => v.stock_quantity > 0),
     look_number: String(raw.id).padStart(3, "0"),
     is_new: raw.is_featured,
+    // Both are annotated on the backend queryset (products/views.py) and were
+    // simply never carried across this seam before.
+    average_rating: raw.average_rating ?? null,
+    review_count: raw.review_count ?? 0,
   };
 }
 

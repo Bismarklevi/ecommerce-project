@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-hairline bg-bone-2 text-ink lg:ml-64">
+    <footer className="border-t border-hairline text-ink">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-10 px-4 py-16 sm:px-6 md:grid-cols-4 lg:px-8">
         <div className="col-span-2 md:col-span-1">
           <p className="mb-4 text-2xl font-extrabold tracking-[0.08em]">KAIRA</p>
@@ -25,6 +25,11 @@ export default function SiteFooter() {
             <li>
               <Link href="/account" className="focus-ring hover:text-wine">
                 Account
+              </Link>
+            </li>
+            <li>
+              <Link href="/saved" className="focus-ring hover:text-wine">
+                Saved items
               </Link>
             </li>
             <li>
@@ -84,11 +89,6 @@ export default function SiteFooter() {
             <li>
               <Link href="/account" className="focus-ring hover:text-wine">
                 Track orders
-              </Link>
-            </li>
-            <li>
-              <Link href="/shop" className="focus-ring hover:text-wine">
-                Support
               </Link>
             </li>
           </ul>

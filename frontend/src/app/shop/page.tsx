@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import ShopClient from "./ShopClient";
+import ShopLoading from "./loading";
 
 export const metadata = {
   title: "Shop - Kaira",
@@ -7,7 +8,7 @@ export const metadata = {
 
 export default function ShopPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ShopLoading />}>
       <ShopClient />
     </Suspense>
   );

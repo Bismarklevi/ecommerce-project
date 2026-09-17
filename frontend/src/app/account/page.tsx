@@ -4,6 +4,7 @@ import { backendFetch, unwrapList } from "@/lib/backend";
 import { formatPrice } from "@/lib/currency";
 import { getAuthToken } from "@/lib/session";
 import type { Order } from "@/lib/types";
+import AccountSettings from "./AccountSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -47,9 +48,17 @@ export default async function AccountPage() {
       : profile?.username;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <p className="section-eyebrow mb-3">Account</p>
-      <h1 className="section-title mb-10">Your account</h1>
+      <h1 className="section-title mb-4">Your account</h1>
+      <p className="mb-10 text-sm text-muted">
+        <Link
+          href="/saved"
+          className="focus-ring font-bold uppercase tracking-[0.12em] underline underline-offset-4 hover:text-wine"
+        >
+          View saved items
+        </Link>
+      </p>
 
       {profile && (
         <div className="mb-12 border border-hairline p-6 sm:p-8">
@@ -74,7 +83,9 @@ export default async function AccountPage() {
               </div>
             )}
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Member since</p>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
+                Member since
+              </p>
               <p className="mt-1 text-lg font-bold">
                 {new Date(profile.date_joined).toLocaleDateString()}
               </p>
@@ -112,6 +123,11 @@ export default async function AccountPage() {
           ))}
         </ul>
       )}
+
+      <p className="mb-6 mt-14 text-xs font-bold uppercase tracking-[0.18em] text-muted">
+        Settings &amp; privacy
+      </p>
+      <AccountSettings />
     </div>
   );
 }
