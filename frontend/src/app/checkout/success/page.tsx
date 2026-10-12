@@ -59,7 +59,6 @@ function CheckoutSuccessContent() {
 
     async function poll() {
       if (attempt === 0) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
         setNotFound(false);
       }
